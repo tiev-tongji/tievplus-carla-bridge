@@ -1,0 +1,6 @@
+struct MsgAccessoryControlSignal
+{
+	byte left_lamp_enable;
+	byte right_lamp_enable;
+	//1:OPEN,0:CLOSE
+}

@@ -1,0 +1,5 @@
+struct MsgPlannerEmergencyControlSignal 
+{
+    int64_t timestamp;
+    boolean  enable;//true->brake false->normal
+}

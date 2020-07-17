@@ -1,0 +1,17 @@
+struct TrajectoryPose 
+{
+    double x;  //reconx(m)
+    double y;  //recony(m)
+    double theta; //heading of car(rad)
+    double t;  //time(s)
+    double k; //curvature(m^-1)
+    double v;  //always is map speed(m/s)
+    double a;  //accelaration(m/s^2)
+}
+
+struct MsgTrajectorySignal
+{
+    int64_t timestamp;
+    int32_t num_poses;   
+    TrajectoryPose poses[num_poses];
+}

@@ -1,0 +1,96 @@
+struct LinePoint
+{
+	float x;
+	float y;
+}
+
+struct LaneLine
+{
+	int32_t line_type;
+	float distance;
+	int32_t num;
+	LinePoint points[num];
+
+	//const value for line_type
+
+	const int8_t kTypeDividing = 0x00; //single solid white, single solid yellow
+	const int8_t kTypeTypeNoPass = 0x01;//double solid white, double solid yellow
+	const int8_t kTypeOneWayPass = 0x02;//double solid&broken white, double solid&broken yellow
+	const int8_t kTypeGuiding = 0x03;//single broken white, single broken yellow, double broken white, double broken white
+
+}
+
+struct Lane
+{
+	int32_t lane_type;
+	float width;
+
+	LaneLine left_line;
+	LaneLine right_line;
+
+	//const value for lane_type
+
+	const int8_t kTypeNone = 0x00;
+	const int8_t kTypeUTurn = 0x01;
+	const int8_t kTypeStraight = 0x02;
+	const int8_t kTypeStraightLeft = 0x03;
+	const int8_t kTypeStraightRight = 0x04;
+	const int8_t kTypeLeft = 0x05;
+	const int8_t kTypeRight = 0x06;
+	const int8_t kTypeLeftRight = 0x07;
+	const int8_t kTypeLeftUTurn = 0x08;
+	const int8_t kTypeStraightUTurn = 0x09;
+	const int8_t kTypeMerge = 0x0A;
+}
+
+struct StopLine
+{
+	boolean exist;
+	int32_t num;
+	LinePoint stop_points[num];
+	float distance;
+}
+
+struct Zebra
+{
+	boolean exist;
+	int32_t num;
+	LinePoint zebra_points[num];
+	float distance;
+}
+
+struct Curb
+{
+	boolean exist;
+	int32_t num;
+	LinePoint curb_points[num];
+	float distance;
+}
+
+struct NoParking
+{
+	boolean exist;
+	int32_t num;
+	LinePoint no_parking_points[num];
+	float distance;
+}
+
+struct Chevron
+{
+	boolean exist;
+	int32_t num;
+	LinePoint chevron_points[num];
+	float distance;
+}
+
+struct MsgRoadMarkingList
+{
+	int32_t current_lane_id; //the lane index of ego car, from right to left is 0, 1, 2, 3....
+	int32_t num;			//the numbers of lane
+	Lane lanes[num];	//lanes
+	StopLine stop_line;
+	Zebra zebra;
+	Curb curb;
+	NoParking no_parking;
+	Chevron chevron;
+}

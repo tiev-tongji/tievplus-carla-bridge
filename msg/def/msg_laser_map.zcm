@@ -1,0 +1,13 @@
+struct  MsgLaserMap
+{
+    int64_t     time_stamp;             
+    double      car_utm_position_x;     
+    double      car_utm_position_y;
+    float       car_heading;            
+    float       map_resolution;         
+    int16_t     map_row_num;            
+    int16_t     map_column_num;         
+    int16_t     car_center_column;      
+    int16_t     car_center_row;
+    byte        map_cells[map_row_num][map_column_num];
+}

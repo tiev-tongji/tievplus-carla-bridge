@@ -1,0 +1,21 @@
+struct PredictedObject
+{
+	int16_t         id;
+	byte            type; // car=0;bicyclist=1;pedestrian=2;unknown=127;
+	float           velocity;
+	float			accelerate;
+	float			heading;
+	float			width;
+	float			length;
+	float			bounding_box[2][4]; // [2][0]:left_up;[2][1]:left_bottom;[2][2]:right_up;[2][3]:right_bottom;
+	int8_t          trajectory_point_num; // current+length of prediction sequence;
+	float           trajectory_point[2][trajectory_point_num]; // [2][0] represent current state;
+}
+struct MsgPredictedObjectTrajectoryList
+{
+	int64_t         time_stamp;
+	byte            data_source; // lidar=1;vision=2;
+	int8_t          object_count;
+	PredictedObject predicted_object[object_count];
+}
+

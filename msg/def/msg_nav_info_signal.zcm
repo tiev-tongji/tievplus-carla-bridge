@@ -1,0 +1,36 @@
+struct MsgNavInfoSignal
+{
+	//GPS time
+	int64_t timestamp;
+
+	//pose at front-axis center
+	double latitude;
+	double longitude;
+	double altitude;
+
+	//utm coordinate, X:east,Y:north
+	double utm_x;
+	double utm_y;
+
+	//orientation
+	double angle_head;	//ISO (EAST as 0 CounterClockwise as positive) -PI ~ PI [deg]
+	float angle_pitch;	//angle refer to the horizon [deg]
+	float angle_roll;
+	float angular_vel_z;	//ISO (CounterClockwise as positive) [rad/s]
+
+	//speed
+	float speed;		//current speed :=(VelEast^2 + VelNorth^2)[m/s]
+	float velocity_east;	//current east velocity [m/s]
+	float velocity_north;	//current north velocity [m/s]
+
+	//status
+	float curvature;	//current curvature [m^(-1)]
+	byte RTK_status; 	// 1 valid 0 invalid
+	float HPOS_accuracy;	//horizontal positioning precision in meters
+	byte is_reckoning_vaild; //1 valid 0 invalid
+	int64_t gps_num_satellites; 	//number of satellites.
+
+	//Acceleration by imu coordinate right-front-up
+	double acceleration_x;
+	double acceleration_y;
+}

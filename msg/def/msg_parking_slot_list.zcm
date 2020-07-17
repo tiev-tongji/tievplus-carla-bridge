@@ -1,0 +1,24 @@
+/**
+ * The unit of ParkingSlotPoint is tentatively determined as the pixel.
+**/
+
+struct ParkingSlotPoint
+{
+    double x;
+    double y;
+}
+
+struct ParkingSlot
+{
+    ParkingSlotPoint front_left;
+    ParkingSlotPoint front_right;
+    ParkingSlotPoint rear_left;
+    ParkingSlotPoint rear_right;
+}
+
+struct MsgParkingSlotList
+{
+    int64_t timestamp;
+    int8_t num;
+    ParkingSlot parking_slots[num];
+}

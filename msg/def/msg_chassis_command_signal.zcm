@@ -1,0 +1,9 @@
+struct MsgChassisCommandSignal
+{
+	int64_t timestamp;
+
+	byte    autonomous_mode_control_command;    //AutoDriveModeRequest (0)Holding (1)Open (2)Close
+	byte    car_gear_command;                   //CarGearRequest (0)Invalid (1)P (2)R (3)N (4)D
+	double  steer_wheel_angle_command;          //SteeringWheelAngleRequest range[-500.0 500.0] deg
+	double  longitudinal_acceleration_command;  //LongitudinalAccelerationRequest range[-5.00 5.00] m/s^2
+}

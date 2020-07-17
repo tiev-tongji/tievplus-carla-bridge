@@ -1,0 +1,35 @@
+struct ZCMMapPoint
+{
+    float       position_x;
+    float       position_y;
+}
+
+struct BoundingBox
+{
+    MapPoint    left_up_point;
+    MapPoint    left_bottom_point;
+    MapPoint    right_up_point;
+    MapPoint    right_bottom_point;
+}
+
+struct TrackedObject
+{
+    int16_t     object_id;
+	byte        object_type;        //CAR = 0; BICYCLIST = 1; PEDESTRIAN = 2; UNKNOWN = 127;
+	float       object_velocity;
+    float       object_accelerate;
+    float       object_width;
+    float       object_length;
+    BoundingBox object_bounding_box;
+    int8_t 		object_path_point_num;
+	float       object_heading;
+	ZCMMapPoint    object_path_points[object_path_point_num];
+}
+
+struct MsgObjectTrackingList
+{
+    int64_t		    time_stamp;
+	byte 		    data_source;    //LIDAR=1 ;VISION=2
+	int8_t		    object_count;
+	ZCMTrackedObject   tracked_objects[object_count];
+}
