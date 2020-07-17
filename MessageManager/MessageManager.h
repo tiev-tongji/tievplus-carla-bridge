@@ -12,7 +12,7 @@ ZeroCM Message Manager
 #include <condition_variable>
 #include <chrono>
 
-#define USE_LCM
+#define USE_ZCM
 
 #ifdef USE_ZCM
 #include <zcm/zcm-cpp.hpp>
