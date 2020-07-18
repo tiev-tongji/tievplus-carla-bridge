@@ -231,7 +231,7 @@ void MessageManager::pack_navinfo(const csd::GnssMeasurement &gnssMsg)
 		heading = heading - 360;
 	NAVINFO.angle_head = deg2rad(heading);
 	NAVINFO.angle_pitch = rot.pitch;
-	NAVINFO.angle_roll = rot.roll;
+	//NAVINFO.angle_roll = rot.roll;
 	auto rot_vel = vehState->GetAngularVelocity();
 	NAVINFO.angular_vel_z = deg2rad(-rot_vel.z);
 	// speed, velocity, acceleration

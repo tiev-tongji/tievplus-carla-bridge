@@ -12,7 +12,7 @@ ZeroCM Message Manager
 #include <condition_variable>
 #include <chrono>
 
-#define USE_ZCM
+#define USE_LCM
 
 #ifdef USE_ZCM
 #include <zcm/zcm-cpp.hpp>
@@ -43,7 +43,7 @@ ZeroCM Message Manager
 #endif
 
 #include <GeographicLib/GeoCoords.hpp>
-#include <eigen3/Eigen/Eigen>
+#include <Eigen/Eigen>
 
 #include "carla/client/Client.h"
 #include "carla/client/World.h"
