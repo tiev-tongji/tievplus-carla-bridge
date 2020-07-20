@@ -207,15 +207,20 @@ void MessageManager::pack_navinfo(const csd::GnssMeasurement &gnssMsg)
 {
 	_mutex.lock();
 
+	auto vehLoc = vehState->GetTransform().location;
+	auto vehRot = vehState->GetTransform().rotation;
+	//printf("UE4 position: (%f, %f, %f, %f, %f, %f)\n", vehLoc.x, vehLoc.y, vehLoc.z, vehRot.roll, vehRot.pitch, vehRot.yaw);
+
 	NAVINFO.timestamp = gnssMsg.GetTimestamp() * 1000;
 	// position
 	NAVINFO.latitude = gnssMsg.GetLatitude();
 	NAVINFO.longitude = gnssMsg.GetLongitude();
-	//printf("GPS lat: %3f, lon: %3f\n", NAVINFO.latitude, NAVINFO.longitude);
 	NAVINFO.altitude = gnssMsg.GetAltitude();
+	//printf("GPS: (%f, %f)\n", NAVINFO.latitude, NAVINFO.longitude);
 	coord.Reset(NAVINFO.latitude, NAVINFO.longitude);
 	NAVINFO.utm_x = coord.Easting();
 	NAVINFO.utm_y = coord.Northing();
+	//printf("error: (%f, %f)\n", NAVINFO.utm_x - vehLoc.x, NAVINFO.utm_y + vehLoc.y);
 	// rotation
 	/*
 	Carla use Unreal-Engine coordinate system, left-hand
@@ -230,6 +235,7 @@ void MessageManager::pack_navinfo(const csd::GnssMeasurement &gnssMsg)
 	else if (heading > 180)
 		heading = heading - 360;
 	NAVINFO.angle_head = deg2rad(heading);
+	printf("UTM: ( E%f, N%f )   heading: %f\n", NAVINFO.utm_x, NAVINFO.utm_y, NAVINFO.angle_head);
 	NAVINFO.angle_pitch = rot.pitch;
 	NAVINFO.angle_roll = rot.roll;
 	auto rot_vel = vehState->GetAngularVelocity();
@@ -439,27 +445,28 @@ void MessageManager::pack_fusionmap_raster()
 		int16_t ymax = bottomCell < FUSIONMAP.map_row_num ? bottomCell : (FUSIONMAP.map_row_num - 1);
 
 		// rasterize obstacles into map cells
-		int16_t x = xmin;
-		int16_t y = ymin;
+		int16_t x = 0;
+		int16_t y = 0;
 
-		while (x <= xmax)
+		while (x <= 400)
 		{
-			y = ymin;
-			while (y <= ymax)
+			y = 0;
+			while (y <= 1000)
 			{
-				double posX = (x - FUSIONMAP.car_center_column) * FUSIONMAP.map_resolution;
-				double posY = (FUSIONMAP.car_center_row - y) * FUSIONMAP.map_resolution;
+				double posY = -(x - FUSIONMAP.car_center_column) * FUSIONMAP.map_resolution;
+				double posX = (FUSIONMAP.car_center_row - y) * FUSIONMAP.map_resolution;
 				bool isOccupied = in_area_test(posX, posY, obj);
-				if (isOccupied)
+				if (1)
 				{
 					// bit-0 history obstacle, bit-1 lidar obstacle, bit-2 moving obstacle
 					bool isHistory = false;
-					bool isMoving = (obj.velocity == 0);
+					bool isMoving = (obj.velocity != 0);
 					if (isHistory)
 						FUSIONMAP.map_cells[y][x] |= 0b00000001;
-					if (isMoving)
-						FUSIONMAP.map_cells[y][x] |= 0b00000100;
-					FUSIONMAP.map_cells[y][x] |= 0b00000010;
+					// if (isMoving)
+					// 	FUSIONMAP.map_cells[y][x] |= 0b00000100;
+					FUSIONMAP.map_cells[y][x] =
+					//FUSIONMAP.map_cells[y][x] |= 0b00000010;
 				}
 				++y;
 			}
@@ -467,6 +474,10 @@ void MessageManager::pack_fusionmap_raster()
 		}
 	}
 
+	for (int i = 0; i < FUSIONMAP.map_cells[500].size(); ++i)
+	{
+		printf("%d", FUSIONMAP.map_cells[500][i]);
+	}
 	_mutex.unlock();
 };
 
@@ -475,7 +486,7 @@ void MessageManager::pack_fusionmap_lidar(const csd::LidarMeasurement &lidarMsg)
 	_mutex.lock();
 
 	MAP_HISTORY_CELLS = FUSIONMAP.map_cells;
-	FUSIONMAP.map_cells.assign(FUSIONMAP.map_cells.size(), MAP_ROW_0);
+	FUSIONMAP.map_cells.assign(MAP_ROW_NUM, MAP_ROW_0);
 
 	FUSIONMAP.time_stamp = lidarMsg.GetTimestamp() * 1000;
 	FUSIONMAP.car_utm_position_x = NAVINFO.utm_x;
@@ -487,5 +498,23 @@ void MessageManager::pack_fusionmap_lidar(const csd::LidarMeasurement &lidarMsg)
 	FUSIONMAP.car_center_column = MAP_CENTER_COLUMN;
 	FUSIONMAP.car_center_row = MAP_CENTER_ROW;
 
+	printf("frame %d\n", lidarMsg.GetFrame());
+	printf("timestamp %4f\n", lidarMsg.GetTimestamp());
+	printf("lidarMsg channel count: %d\n", lidarMsg.GetChannelCount());
+	for (size_t i = 0; i < lidarMsg.GetChannelCount(); ++i)
+	{
+		printf("lidarMsg point count  : %d\n", lidarMsg.GetPointCount(i));
+	}
+	float intensity = lidarMsg.begin()->intensity;
+	float x = lidarMsg.begin()->point.x;
+	float y = lidarMsg.begin()->point.y;
+	float z = lidarMsg.begin()->point.z;
+	printf("first point :(%4f, %4f, %4f : %4f)\n", x, y, z, intensity);
+	printf("total points num: %d\n", lidarMsg.size());
+
+	for (size_t i = 0; i < lidarMsg.size(); ++i)
+	{
+		auto p = lidarMsg[i].point;
+	}
 	_mutex.unlock();
 }

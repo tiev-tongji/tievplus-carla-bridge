@@ -14,7 +14,7 @@ static const uint16_t PORT = 2000;      // server post.
 static const size_t WORKER_THREADS = 0ULL;
 static const string ZCM_URL = "udpm://239.255.76.67:7667?ttl=1";
 static const string PID_PARAMETER_FILEPATH = "../cfg/pid_parameters.json";
-static const string TOWN_NAME = "Town04";
+static const string TOWN_NAME = "Town03";
 static std::mt19937_64 rng((std::random_device())());
 
 // to raise a runtime error.
@@ -74,16 +74,30 @@ public:
         return player;
     }
 
-    SharedPtr<cc::Sensor> spawnSensor(const string &bpName, const cg::Transform &transfrom,
+    SharedPtr<cc::Sensor> spawnSensor(const string &bpName, const cg::Transform &transform,
                                       SharedPtr<cc::Actor> parent)
     {
         auto sensorBp = bpLib->Find(bpName);
         EXPECT_TRUE(sensorBp != nullptr);
-        auto sensorActor = carlaWorld->SpawnActor(*sensorBp, transfrom, parent.get());
+        auto sensorActor = carlaWorld->SpawnActor(*sensorBp, transform, parent.get());
         std::cout << "Spawned sensor  " << sensorActor->GetDisplayId() << '\n';
         auto sensor = static_pointer_cast<cc::Sensor>(sensorActor);
         sensorList.push_back(sensor);
         return sensor;
+    }
+
+    SharedPtr<cc::Sensor> setLidar(const cg::Transform &transform)
+    {
+        auto lidarBpLib = bpLib->Filter("sensor.lidar.ray_cast");
+        auto lidarBp = RandomChoice(*lidarBpLib, rng);
+        if (lidarBp.ContainsAttribute(""))
+        {
+            ;
+        }
+        if (lidarBp.ContainsAttribute(""))
+        {
+            ;
+        }
     }
 
     void init()
@@ -152,6 +166,7 @@ public:
         msgManager->pack_fusionmap_raster();
 
 #ifdef SYNC_MODE
+        //msgManager->publish_fusionmap();
         msgManager->publish_all();
 #endif
 
@@ -232,19 +247,35 @@ void gameLoop(int16_t freq)
     msgManager.subscribe_all();
     PIDController pidController(PID_PARAMETER_FILEPATH);
 #ifdef ASYNC_MODE
-    msgManager.publish_all_async();
+    msgManager.publish_all_async(150, 150, 20, 20, 20);
 #endif
-    // // get world, blueprints and map
+    // get world, blueprints and map
     cc::World carlaWorld = client.LoadWorld(TOWN_NAME);
+    //cc::World carlaWorld = client.GetWorld();
     MyWorld world(carlaWorld, msgManager);
     world.setup();
 
     // spawn actors
-    // auto egoInitTransform = makeTransform(0, 0, 0, 0, 0, 0);
     auto egoInitTransform = RandomChoice(world.map->GetRecommendedSpawnPoints(), rng);
+    // UTM to UE4 coord, to find specific spawn point
+    double spawnX = 427014.0254 - 426858.836012;
+    double spawnY = 5427935.493100 - 5427742.755;
+    egoInitTransform.location.x = spawnX;
+    egoInitTransform.location.y = spawnY;
+    egoInitTransform.location.z = 3;
+    egoInitTransform.rotation.yaw = -180;
     world.spawnPlayer(egoInitTransform);
-    //std::cout << "Spawned " << world.player->GetDisplayId() << '\n';
     std::cout << "Spawned ego car " << world.player->GetDisplayId() << '\n';
+
+    // auto targetTransform = RandomChoice(world.map->GetRecommendedSpawnPoints(), rng);
+    // targetTransform.location.x = spawnX - 35;
+    // targetTransform.location.y = spawnY;
+    // targetTransform.location.z = 3;
+    // auto vehicleBp = world.bpLib->Filter("vehicle");
+    // auto bpActor = RandomChoice(*vehicleBp, rng);
+    // auto target = world.carlaWorld->TrySpawnActor(bpActor, targetTransform);
+    // auto targetVeh = static_pointer_cast<cc::Vehicle>(target);
+
     auto gnssTransform = makeTransform(0, 0, 3, 0, 0, 0);
     auto gnss = world.spawnSensor("sensor.other.gnss", gnssTransform, world.player);
     auto imuTransform = makeTransform(0, 0, 3, 0, 0, 0);

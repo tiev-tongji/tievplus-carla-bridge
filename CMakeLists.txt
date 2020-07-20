@@ -26,5 +26,5 @@ add_executable (tiev-sim "tiev-sim.cpp")
 add_executable (cpp-client-demo "demo.cpp")
 
 # link
-target_link_libraries (tiev-sim pid_controller msg_manager)
+target_link_libraries (tiev-sim pid_controller msg_manager sfml-graphics sfml-window sfml-system)
 target_link_libraries (cpp-client-demo carla_client Detour DetourCrowd boost_filesystem Recast rpc png jpeg tiff)
