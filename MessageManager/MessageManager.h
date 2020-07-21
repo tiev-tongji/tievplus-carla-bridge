@@ -132,16 +132,20 @@ inline bool in_area_test(double x, double y, const PredictedObject &obj)
 	double z1 = (obj.bounding_box[0][1] - obj.bounding_box[0][0]) * (y - obj.bounding_box[1][0]) -
 				(obj.bounding_box[1][1] - obj.bounding_box[1][0]) * (x - obj.bounding_box[0][0]);
 	bool isNeg = z1 < 0;
+	//printf("z1: %f\n", z1);
 	double z2 = (obj.bounding_box[0][3] - obj.bounding_box[0][1]) * (y - obj.bounding_box[1][1]) -
 				(obj.bounding_box[1][3] - obj.bounding_box[1][1]) * (x - obj.bounding_box[0][1]);
+	//printf("z2: %f\n", z2);
 	if ((isNeg && z2 >= 0) || (!isNeg && z2 < 0))
 		return false; // once result's symbol is different from previous ones, return false.
 	double z3 = (obj.bounding_box[0][2] - obj.bounding_box[0][3]) * (y - obj.bounding_box[1][3]) -
 				(obj.bounding_box[1][2] - obj.bounding_box[1][3]) * (x - obj.bounding_box[0][3]);
+	//printf("z3: %f\n", z3);
 	if ((isNeg && z3 >= 0) || (!isNeg && z3 < 0))
 		return false;
 	double z4 = (obj.bounding_box[0][0] - obj.bounding_box[0][2]) * (y - obj.bounding_box[1][2]) -
-				(obj.bounding_box[1][0] - obj.bounding_box[1][2]) * (x - obj.bounding_box[1][2]);
+				(obj.bounding_box[1][0] - obj.bounding_box[1][2]) * (x - obj.bounding_box[0][2]);
+	//printf("z4: %f\n", z4);
 	if ((isNeg && z4 >= 0) || (!isNeg && z4 < 0))
 		return false;
 	return true;
@@ -150,18 +154,19 @@ inline bool in_area_test(double x, double y, const PredictedObject &obj)
 class MessageManager
 {
 public:
-	friend class cc::Actor::ActorState;
 	MessageManager(std::string url) : TUNNEL(url), _need_stop(false){};
 	MessageManager() : _need_stop(false){};
 	MessageManager(MessageManager const &) = delete;
 	MessageManager &operator=(MessageManager const &) = delete;
 	~MessageManager()
 	{
+		_mutex.unlock();
 		_need_stop = true;
 		for (auto &t : _pub_threads)
 		{
 			if (t.joinable())
 				t.join();
+			printf("pub thread join\n");
 		}
 #ifdef USE_LCM
 		for (auto &t : _sub_threads)
@@ -170,6 +175,7 @@ public:
 				t.join();
 		}
 #endif
+		std::cout << "Message Manager deconstructed" << std::endl;
 	};
 
 #ifdef USE_ZCM

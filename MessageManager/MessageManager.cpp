@@ -339,6 +339,7 @@ PredictedObject MessageManager::pack_one_object(cc::ActorPtr pActor)
 	}
 	for (int i = 0; i < 4; ++i)
 	{
+		//printf("vertex 1: (%f, %f)\n", vertexs[i].x, vertexs[i].y);
 		if (vertexs[i].y >= predObj.trajectory_point[1][0])
 		{
 			if (vertexs[i].x <= predObj.trajectory_point[0][0])
@@ -371,6 +372,10 @@ PredictedObject MessageManager::pack_one_object(cc::ActorPtr pActor)
 		}
 	}
 
+	// for (int i = 0; i < 4; ++i)
+	// {
+	// 	printf("boundingbox point: (%f, %f)\n", predObj.bounding_box[0][i], predObj.bounding_box[1][i]);
+	// }
 	return predObj;
 };
 
@@ -441,12 +446,13 @@ void MessageManager::pack_fusionmap_raster()
 	{
 		auto box = obj.bounding_box;
 		// calculate rasterize zoom
-		float left = box[0][0] < box[1][0] ? box[0][0] : box[1][0];
-		float right = box[2][0] > box[3][0] ? box[2][0] : box[3][0];
-		float bottom = box[1][1] < box[3][1] ? box[1][1] : box[3][1];
-		float top = box[0][1] > box[2][1] ? box[0][1] : box[2][1];
-		int16_t leftCell = floor(left / FUSIONMAP.map_resolution) + FUSIONMAP.car_center_column;
-		int16_t rightCell = ceil(right / FUSIONMAP.map_resolution) + FUSIONMAP.car_center_column;
+		float left = box[1][0] > box[1][1] ? box[1][0] : box[1][1];
+		float right = box[1][2] < box[1][3] ? box[1][2] : box[1][3];
+		float bottom = box[0][1] < box[0][3] ? box[0][1] : box[0][3];
+		float top = box[0][0] > box[0][2] ? box[0][0] : box[0][2];
+		//printf("left: %f, right: %f, bottom: %f, top: %f\n", left, right, bottom, top);
+		int16_t leftCell = -floor(left / FUSIONMAP.map_resolution) + FUSIONMAP.car_center_column;
+		int16_t rightCell = -ceil(right / FUSIONMAP.map_resolution) + FUSIONMAP.car_center_column;
 		int16_t bottomCell = FUSIONMAP.car_center_row - floor(bottom / FUSIONMAP.map_resolution);
 		int16_t topCell = FUSIONMAP.car_center_row - ceil(top / FUSIONMAP.map_resolution);
 		// front x, right y
@@ -454,12 +460,13 @@ void MessageManager::pack_fusionmap_raster()
 		int16_t ymax = rightCell < FUSIONMAP.map_column_num ? rightCell : (FUSIONMAP.map_column_num - 1);
 		int16_t xmin = topCell > -1 ? topCell : 0;
 		int16_t xmax = bottomCell < FUSIONMAP.map_row_num ? bottomCell : (FUSIONMAP.map_row_num - 1);
+		//printf("suggest rasterize zone: (%d, %d, %d, %d)\n", ymin, ymax, xmin, xmax);
 
 		// rasterize obstacles into map cells
 		int16_t x = xmin;
 		int16_t y = ymin;
 
-		int rastered_point_num = 0;
+		//int rastered_point_num = 0;
 
 		while (x <= xmax)
 		{
@@ -473,7 +480,7 @@ void MessageManager::pack_fusionmap_raster()
 				{
 					// bit-0 history obstacle, bit-1 lidar obstacle, bit-2 moving obstacle
 					FUSIONMAP.map_cells[x][y] |= 0b00000010;
-					++rastered_point_num;
+					//++rastered_point_num;
 					bool isHistory = true;
 					bool isMoving = (fabs(obj.velocity) < 0);
 					if (isHistory)
@@ -485,8 +492,8 @@ void MessageManager::pack_fusionmap_raster()
 			}
 			++x;
 		}
+		//printf("rastered points count: %d\n", rastered_point_num);
 	}
-	printf("rastered points count: %d\n", rastered_point_num);
 	_mutex.unlock();
 };
 
