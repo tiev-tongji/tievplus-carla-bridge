@@ -1,0 +1,4 @@
+struct MsgInteractionControlSignal {
+    int64_t timestamp;
+    boolean  auto_driving_enable;//true->unmanned false->manned    
+}

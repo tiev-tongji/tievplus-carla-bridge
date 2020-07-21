@@ -1,0 +1,42 @@
+/**
+ * Note that the position is calculated based on the size of the image and 
+ * the real world and based on the focal length, which is not very accurate 
+ * and the coordinate is the center position  of the trafficsign.
+**/
+
+struct TrafficSign 
+{
+  int8_t cls ; // classification of the object 
+  float x ;    // position x in world coordinate   
+  float y ;    // position y in world coordinate   
+  float z ;    // position z in world coordinate   
+}
+
+
+struct MsgTrafficSignSignal  
+{
+  int64_t  timestamp;
+  int8_t num ; // the number of the traffic sign.
+  TrafficSign traffic_sign_list[num] ; // the list of the traffic sign.
+  const int8_t SpeedLimit5 = 0x01  ;      
+  const int8_t SpeedLimit10 = 0x02  ;
+  const int8_t SpeedLimit15 = 0x03  ;
+  const int8_t SpeedLimit20 = 0x04  ;
+  const int8_t SpeedLimit25 = 0x05  ;
+  const int8_t SpeedLimit30 = 0x06  ;
+  const int8_t SpeedLimit35 = 0x07  ;
+  const int8_t SpeedLimit40 = 0x08  ;
+  const int8_t SpeedLimit50 = 0x09  ;
+  const int8_t SpeedLimit60 = 0x0A  ;
+  const int8_t SpeedLimit65 = 0x0B  ;
+  const int8_t SpeedLimit70 = 0x0C  ;
+  const int8_t SpeedLimit80 = 0x0D  ;
+  const int8_t SpeedLimit90 = 0x0E  ;
+  const int8_t SpeedLimit100 = 0x0F  ;
+  const int8_t SpeedLimit110 = 0x10  ;
+  const int8_t SpeedLimit120 = 0x11  ;
+  const int8_t Stop = 0x12  ;
+  const int8_t RigthGuide = 0x13  ;
+  const int8_t LeftGuide = 0x14  ;
+  const int8_t Tripod = 0x15 ;
+}

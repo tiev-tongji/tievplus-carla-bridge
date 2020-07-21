@@ -1,0 +1,13 @@
+struct NamedMapArray
+{
+    string name;
+    int16_t height;
+    int16_t width;
+    byte cells[height][width]; 
+}
+
+struct MsgUiMapList
+{
+    int16_t mapArraySize;
+    NamedMapArray mapArray[mapArraySize];
+}

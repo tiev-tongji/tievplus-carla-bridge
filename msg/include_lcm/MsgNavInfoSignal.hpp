@@ -36,6 +36,8 @@ class MsgNavInfoSignal
         float      angle_pitch;
 
         /// angle refer to the horizon [deg]
+        float      angle_roll;
+
         float      angular_vel_z;
 
         /**
@@ -65,7 +67,7 @@ class MsgNavInfoSignal
         /// horizontal positioning precision in meters
         uint8_t    is_reckoning_vaild;
 
-        /// 1 valid 0 invalid 
+        /// 1 valid 0 invalid
         int64_t    gps_num_satellites;
 
         /**
@@ -196,6 +198,9 @@ int MsgNavInfoSignal::_encodeNoHash(void *buf, int offset, int maxlen) const
     tlen = __float_encode_array(buf, offset + pos, maxlen - pos, &this->angle_pitch, 1);
     if(tlen < 0) return tlen; else pos += tlen;
 
+    tlen = __float_encode_array(buf, offset + pos, maxlen - pos, &this->angle_roll, 1);
+    if(tlen < 0) return tlen; else pos += tlen;
+
     tlen = __float_encode_array(buf, offset + pos, maxlen - pos, &this->angular_vel_z, 1);
     if(tlen < 0) return tlen; else pos += tlen;
 
@@ -260,6 +265,9 @@ int MsgNavInfoSignal::_decodeNoHash(const void *buf, int offset, int maxlen)
     tlen = __float_decode_array(buf, offset + pos, maxlen - pos, &this->angle_pitch, 1);
     if(tlen < 0) return tlen; else pos += tlen;
 
+    tlen = __float_decode_array(buf, offset + pos, maxlen - pos, &this->angle_roll, 1);
+    if(tlen < 0) return tlen; else pos += tlen;
+
     tlen = __float_decode_array(buf, offset + pos, maxlen - pos, &this->angular_vel_z, 1);
     if(tlen < 0) return tlen; else pos += tlen;
 
@@ -312,6 +320,7 @@ int MsgNavInfoSignal::_getEncodedSizeNoHash() const
     enc_size += __float_encoded_array_size(NULL, 1);
     enc_size += __float_encoded_array_size(NULL, 1);
     enc_size += __float_encoded_array_size(NULL, 1);
+    enc_size += __float_encoded_array_size(NULL, 1);
     enc_size += __byte_encoded_array_size(NULL, 1);
     enc_size += __float_encoded_array_size(NULL, 1);
     enc_size += __byte_encoded_array_size(NULL, 1);
@@ -323,7 +332,7 @@ int MsgNavInfoSignal::_getEncodedSizeNoHash() const
 
 uint64_t MsgNavInfoSignal::_computeHash(const __lcm_hash_ptr *)
 {
-    uint64_t hash = 0xbd6c7a1b560b9d51LL;
+    uint64_t hash = 0xa027097c5d81421aLL;
     return (hash<<1) + ((hash>>63)&1);
 }
 

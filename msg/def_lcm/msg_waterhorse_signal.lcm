@@ -1,0 +1,10 @@
+/**
+* The probability that a water horse exists
+* Considering the use of probability,
+* the way of decision planning is more flexible
+**/
+struct MsgWaterhorseSignal
+{
+  int64_t timestamp ;
+  float prob ; //Probability of exiting waterhorse or cone bucket [0 - 1]
+}

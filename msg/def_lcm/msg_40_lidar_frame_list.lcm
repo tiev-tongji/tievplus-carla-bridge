@@ -1,0 +1,14 @@
+struct ZCMLidarPoint
+{
+    float point_x;
+    float point_y;
+    float point_z;
+    float point_intensity;
+    int32_t time_offset;
+}
+struct  Msg40LidarFrameList
+{
+    int64_t     time_stamp; 
+    int32_t     points_num; 
+    ZCMLidarPoint  frame[points_num];
+}

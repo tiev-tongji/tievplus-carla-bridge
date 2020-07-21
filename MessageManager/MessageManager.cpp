@@ -231,7 +231,7 @@ void MessageManager::pack_navinfo(const csd::GnssMeasurement &gnssMsg)
 		heading = heading - 360;
 	NAVINFO.angle_head = deg2rad(heading);
 	NAVINFO.angle_pitch = rot.pitch;
-	//NAVINFO.angle_roll = rot.roll;
+	NAVINFO.angle_roll = rot.roll;
 	auto rot_vel = vehState->GetAngularVelocity();
 	NAVINFO.angular_vel_z = deg2rad(-rot_vel.z);
 	// speed, velocity, acceleration
@@ -475,7 +475,7 @@ void MessageManager::pack_fusionmap_lidar(const csd::LidarMeasurement &lidarMsg)
 	_mutex.lock();
 
 	MAP_HISTORY_CELLS = FUSIONMAP.map_cells;
-	FUSIONMAP.map_cells.assign(FUSIONMAP.map_cells.size(), MAP_ROW_0);
+	FUSIONMAP.map_cells.assign(MAP_ROW_NUM, MAP_ROW_0);
 
 	FUSIONMAP.time_stamp = lidarMsg.GetTimestamp() * 1000;
 	FUSIONMAP.car_utm_position_x = NAVINFO.utm_x;
@@ -487,5 +487,14 @@ void MessageManager::pack_fusionmap_lidar(const csd::LidarMeasurement &lidarMsg)
 	FUSIONMAP.car_center_column = MAP_CENTER_COLUMN;
 	FUSIONMAP.car_center_row = MAP_CENTER_ROW;
 
+	int pnum = lidarMsg.size();
+	Eigen::Matrix3Xf pcd(pnum);
+	for (size_t i = 0; i < pnum; ++i)
+	{
+		auto p = lidarMsg[i];
+		pcd(0, i) = p.x;
+		pcd(1, i) = p.y;
+		pcd(2, i) = p.z;
+	}
 	_mutex.unlock();
 }
