@@ -18,6 +18,7 @@ according to the input of tiev-plus:
 
 #include "rapidjson/filereadstream.h"
 #include "rapidjson/document.h"
+#include <iostream>
 
 struct PIDParaSet
 {
@@ -54,6 +55,7 @@ class PIDController
 {
 public:
 	PIDController(const std::string &filename);
+	~PIDController() { std::cout << "PIDController deconstructed" << std::endl; }
 	void tick(double aim_acc, double aim_steer, double veh_acc, double veh_steer, bool direct_steer = true);
 
 public:

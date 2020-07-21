@@ -54,19 +54,34 @@ void sig_handler(int sig)
 class MyWorld
 {
 public:
-    MyWorld(cc::World &carlaWorld, MessageManager &msgManager)
-        : carlaWorld(&carlaWorld), msgManager(&msgManager){};
+    MyWorld(cc::World &carlaWorld)
+        : carlaWorld(&carlaWorld), msgManager(ZCM_URL){};
     ~MyWorld()
     {
-        if (player.get() != nullptr)
-        {
-            std::cout << "destroying player..." << std::endl;
-            player->Destroy();
-        }
         for (auto s : sensorList)
         {
-            std::cout << "destroying sensors..." << std::endl;
-            s->Destroy();
+            if (s->IsAlive())
+            {
+                std::cout << "destroying sensors..." << std::endl;
+                s->Stop();
+                s->Destroy();
+            }
+        }
+        for (auto a : actorList)
+        {
+            if (a->IsAlive())
+            {
+                std::cout << "destroying actors..." << std::endl;
+                a->Destroy();
+            }
+        }
+        if (player.get() != nullptr)
+        {
+            if (player->IsAlive())
+            {
+                std::cout << "destroying player..." << std::endl;
+                player->Destroy();
+            }
         }
     };
 
@@ -100,9 +115,9 @@ public:
 
     SharedPtr<cc::Vehicle> spawnActor(const cg::Transform &initTransform)
     {
-        auto vehicleBp = world.bpLib->Filter("vehicle");
+        auto vehicleBp = bpLib->Filter("vehicle");
         auto bpActor = RandomChoice(*vehicleBp, rng);
-        auto target = world.carlaWorld->TrySpawnActor(bpActor, initTransform);
+        auto target = carlaWorld->TrySpawnActor(bpActor, initTransform);
         std::cout << "Spawned actor   " << target->GetDisplayId() << '\n';
         auto targetVeh = static_pointer_cast<cc::Vehicle>(target);
         actorList.push_back(targetVeh);
@@ -125,7 +140,13 @@ public:
 
     void init()
     {
-        msgManager->vehState = player; // msgManager need ego car's state to pack tiev msgs.
+        msgManager.vehState = player; // msgManager need ego car's state to pack tiev msgs.
+        msgManager.TUNNEL.subscribe("CANCONTROL", &MessageManager::control_handler, &msgManager);
+        msgManager.subscribe_all();
+
+#ifdef ASYNC_MODE
+        msgManager.publish_all_async(150, 150, 20, 20, 20);
+#endif
 
         // rigister sensors' callback functions.
         for (auto s : sensorList)
@@ -134,21 +155,21 @@ public:
             {
                 s->Listen([this](auto data) {
                     auto imuMsg = static_pointer_cast<csd::IMUMeasurement>(data);
-                    this->msgManager->pack_caninfo(*imuMsg);
+                    this->msgManager.pack_caninfo(*imuMsg);
                 });
             }
             else if (start_with(s->GetTypeId(), "sensor.other.gnss"))
             {
                 s->Listen([this](auto data) {
                     auto gnssMsg = static_pointer_cast<csd::GnssMeasurement>(data);
-                    this->msgManager->pack_navinfo(*gnssMsg);
+                    this->msgManager.pack_navinfo(*gnssMsg);
                 });
             }
             else if (start_with(s->GetTypeId(), "sensor.lidar.ray_cast"))
             {
                 s->Listen([this](auto data) {
                     auto lidarMsg = static_pointer_cast<csd::LidarMeasurement>(data);
-                    this->msgManager->pack_fusionmap_lidar(*lidarMsg);
+                    this->msgManager.pack_fusionmap_lidar(*lidarMsg);
                 });
             }
             else if (start_with(s->GetTypeId(), "sensor.camera.rgb"))
@@ -174,10 +195,10 @@ public:
     void tick(PIDController &pidController)
     {
 #ifdef HIL_MODE
-        double aimAcc = msgManager->CONTROL.longitudinal_acceleration_command;
-        double vehAcc = msgManager->CANINFO.acceleration_x;
-        double aimSteer = msgManager->CONTROL.steer_wheel_angle_command;
-        double vehSteer = msgManager->CANINFO.steer_wheel_angle;
+        double aimAcc = msgManager.CONTROL.longitudinal_acceleration_command;
+        double vehAcc = msgManager.CANINFO.acceleration_x;
+        double aimSteer = msgManager.CONTROL.steer_wheel_angle_command;
+        double vehSteer = msgManager.CANINFO.steer_wheel_angle;
         pidController.tick(aimAcc, aimSteer, vehAcc, vehSteer, true);
         control.brake = pidController.control.brake;
         control.throttle = pidController.control.throttle;
@@ -185,42 +206,42 @@ public:
         player->ApplyControl(control);
 #endif
 
-        msgManager->pack_objectlist(*carlaWorld->GetActors().get());
-        msgManager->pack_fusionmap_raster();
+        msgManager.pack_objectlist(*carlaWorld->GetActors());
+        msgManager.pack_fusionmap_raster();
 
 #ifdef SYNC_MODE
         //msgManager->publish_fusionmap();
-        msgManager->publish_all();
+        msgManager.publish_all();
 #endif
 
 #ifdef OPT_TIME_TEST
         auto t1 = std::chrono::steady_clock::now();
-        msgManager->pack_objectlist(*(carlaWorld->GetActors().get()));
+        msgManager.pack_objectlist(*(carlaWorld->GetActors().get()));
         auto t2 = std::chrono::steady_clock::now();
         double dr_ms_pack_objectlist = std::chrono::duration<double, std::milli>(t2 - t1).count();
 
         auto t3 = std::chrono::steady_clock::now();
-        msgManager->pack_fusionmap_raster();
+        msgManager.pack_fusionmap_raster();
         auto t4 = std::chrono::steady_clock::now();
         double dr_ms_pack_fusionmap = std::chrono::duration<double, std::milli>(t4 - t3).count();
 
         auto t5 = std::chrono::steady_clock::now();
-        msgManager->publish_objectlist();
+        msgManager.publish_objectlist();
         auto t6 = std::chrono::steady_clock::now();
         double dr_ms_pub_objectlist = std::chrono::duration<double, std::milli>(t6 - t5).count();
 
         auto t7 = std::chrono::steady_clock::now();
-        msgManager->publish_fusionmap();
+        msgManager.publish_fusionmap();
         auto t8 = std::chrono::steady_clock::now();
         double dr_ms_pub_fusionmap = std::chrono::duration<double, std::milli>(t8 - t7).count();
 
         auto t9 = std::chrono::steady_clock::now();
-        msgManager->publish_navinfo();
+        msgManager.publish_navinfo();
         auto t10 = std::chrono::steady_clock::now();
         double dr_ms_pub_navinfo = std::chrono::duration<double, std::milli>(t10 - t9).count();
 
         auto t11 = std::chrono::steady_clock::now();
-        msgManager->publish_caninfo();
+        msgManager.publish_caninfo();
         auto t12 = std::chrono::steady_clock::now();
         double dr_ms_pub_caninfo = std::chrono::duration<double, std::milli>(t12 - t11).count();
 
@@ -254,7 +275,7 @@ public:
     cc::Vehicle::Control control;
     vector<SharedPtr<cc::Sensor>> sensorList;
     vector<SharedPtr<cc::Vehicle>> actorList;
-    SharedPtr<MessageManager> msgManager;
+    MessageManager msgManager;
 };
 
 void gameLoop(int16_t freq)
@@ -265,17 +286,12 @@ void gameLoop(int16_t freq)
     std::cout << "[INFO] Client API version : " << client.GetClientVersion() << '\n';
     std::cout << "[INFO] Server API version : " << client.GetServerVersion() << '\n';
 
-    // init LCM messageManager and PIDController
-    MessageManager msgManager(ZCM_URL);
-    msgManager.TUNNEL.subscribe("CANCONTROL", &MessageManager::control_handler, &msgManager);
-    msgManager.subscribe_all();
+    // init PIDController
     PIDController pidController(PID_PARAMETER_FILEPATH);
-#ifdef ASYNC_MODE
-    msgManager.publish_all_async(150, 150, 20, 20, 20);
-#endif
+
     // get world, blueprints and map
-    cc::World carlaWorld = client.GetWorld(TOWN_NAME);
-    MyWorld world(carlaWorld, msgManager);
+    cc::World carlaWorld = client.LoadWorld(TOWN_NAME);
+    MyWorld world(carlaWorld);
     world.setup();
 
     // spawn actors
@@ -296,21 +312,22 @@ void gameLoop(int16_t freq)
     world.spawnActor(targetTransform);
 
     auto gnssTransform = makeTransform(0, 0, 3, 0, 0, 0);
-    auto gnss = world.spawnSensor("sensor.other.gnss", gnssTransform, world.player);
+    world.spawnSensor("sensor.other.gnss", gnssTransform, world.player);
     auto imuTransform = makeTransform(0, 0, 3, 0, 0, 0);
-    auto imu = world.spawnSensor("sensor.other.imu", imuTransform, world.player);
+    world.spawnSensor("sensor.other.imu", imuTransform, world.player);
     // auto lidarTransform = makeTransform(0, 0, 3, 0, 0, 0);
     // auto lidar = world.spawnSensor("sensor.lidar.ray_cast", lidarTransform, world.player);
 
     world.init();
     // game loop
-    while (!keyboardIrruption)
+    int count = 60;
+    while (count)
     {
+        --count;
         auto time_point = std::chrono::steady_clock::now() + std::chrono::milliseconds(1000 / freq);
         world.tick(pidController);
         std::this_thread::sleep_until(time_point);
     }
-    world.~MyWorld();
 }
 
 int main()
