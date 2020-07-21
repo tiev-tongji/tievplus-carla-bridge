@@ -11,6 +11,7 @@ ZeroCM Message Manager
 #include <mutex>
 #include <condition_variable>
 #include <chrono>
+#include <cmath>
 
 #define USE_ZCM
 

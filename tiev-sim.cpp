@@ -2,6 +2,7 @@
 
 #include "MessageManager.h"
 #include "PIDController.h"
+#include <csignal>
 
 #define ASYNC_MODE
 //#define SYNC_MODE
@@ -16,6 +17,7 @@ static const string ZCM_URL = "udpm://239.255.76.67:7667?ttl=1";
 static const string PID_PARAMETER_FILEPATH = "../cfg/pid_parameters.json";
 static const string TOWN_NAME = "Town03";
 static std::mt19937_64 rng((std::random_device())());
+static volatile bool keyboardIrruption = false;
 
 // to raise a runtime error.
 #define EXPECT_TRUE(pred)                \
@@ -41,6 +43,14 @@ inline cg::Transform makeTransform(double x, double y, double z, double pitch, d
     return trans;
 }
 
+void sig_handler(int sig)
+{
+    if (sig == SIGINT)
+    {
+        keyboardIrruption = true;
+    }
+}
+
 class MyWorld
 {
 public:
@@ -50,11 +60,12 @@ public:
     {
         if (player.get() != nullptr)
         {
-            printf("destroying player");
+            std::cout << "destroying player..." << std::endl;
             player->Destroy();
         }
         for (auto s : sensorList)
         {
+            std::cout << "destroying sensors..." << std::endl;
             s->Destroy();
         }
     };
@@ -70,6 +81,7 @@ public:
         auto vehicleBp = bpLib->Filter("vehicle");
         auto bpPlayer = RandomChoice(*vehicleBp, rng);
         auto veh = carlaWorld->TrySpawnActor(bpPlayer, initTransform);
+        std::cout << "Spawned player  " << veh->GetDisplayId() << '\n';
         player = static_pointer_cast<cc::Vehicle>(veh);
         return player;
     }
@@ -84,6 +96,17 @@ public:
         auto sensor = static_pointer_cast<cc::Sensor>(sensorActor);
         sensorList.push_back(sensor);
         return sensor;
+    }
+
+    SharedPtr<cc::Vehicle> spawnActor(const cg::Transform &initTransform)
+    {
+        auto vehicleBp = world.bpLib->Filter("vehicle");
+        auto bpActor = RandomChoice(*vehicleBp, rng);
+        auto target = world.carlaWorld->TrySpawnActor(bpActor, initTransform);
+        std::cout << "Spawned actor   " << target->GetDisplayId() << '\n';
+        auto targetVeh = static_pointer_cast<cc::Vehicle>(target);
+        actorList.push_back(targetVeh);
+        return targetVeh;
     }
 
     SharedPtr<cc::Sensor> setLidar(const cg::Transform &transform)
@@ -230,6 +253,7 @@ public:
     SharedPtr<cc::Map> map;
     cc::Vehicle::Control control;
     vector<SharedPtr<cc::Sensor>> sensorList;
+    vector<SharedPtr<cc::Vehicle>> actorList;
     SharedPtr<MessageManager> msgManager;
 };
 
@@ -250,8 +274,7 @@ void gameLoop(int16_t freq)
     msgManager.publish_all_async(150, 150, 20, 20, 20);
 #endif
     // get world, blueprints and map
-    cc::World carlaWorld = client.LoadWorld(TOWN_NAME);
-    //cc::World carlaWorld = client.GetWorld();
+    cc::World carlaWorld = client.GetWorld(TOWN_NAME);
     MyWorld world(carlaWorld, msgManager);
     world.setup();
 
@@ -265,16 +288,12 @@ void gameLoop(int16_t freq)
     egoInitTransform.location.z = 3;
     egoInitTransform.rotation.yaw = -180;
     world.spawnPlayer(egoInitTransform);
-    std::cout << "Spawned ego car " << world.player->GetDisplayId() << '\n';
 
-    // auto targetTransform = RandomChoice(world.map->GetRecommendedSpawnPoints(), rng);
-    // targetTransform.location.x = spawnX - 35;
-    // targetTransform.location.y = spawnY;
-    // targetTransform.location.z = 3;
-    // auto vehicleBp = world.bpLib->Filter("vehicle");
-    // auto bpActor = RandomChoice(*vehicleBp, rng);
-    // auto target = world.carlaWorld->TrySpawnActor(bpActor, targetTransform);
-    // auto targetVeh = static_pointer_cast<cc::Vehicle>(target);
+    auto targetTransform = RandomChoice(world.map->GetRecommendedSpawnPoints(), rng);
+    targetTransform.location.x = spawnX - 35;
+    targetTransform.location.y = spawnY;
+    targetTransform.location.z = 3;
+    world.spawnActor(targetTransform);
 
     auto gnssTransform = makeTransform(0, 0, 3, 0, 0, 0);
     auto gnss = world.spawnSensor("sensor.other.gnss", gnssTransform, world.player);
@@ -285,15 +304,17 @@ void gameLoop(int16_t freq)
 
     world.init();
     // game loop
-    while (true)
+    while (!keyboardIrruption)
     {
         auto time_point = std::chrono::steady_clock::now() + std::chrono::milliseconds(1000 / freq);
         world.tick(pidController);
         std::this_thread::sleep_until(time_point);
     }
+    world.~MyWorld();
 }
 
 int main()
 {
+    signal(SIGINT, sig_handler);
     gameLoop(60);
 }

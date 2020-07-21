@@ -32,9 +32,9 @@ void MessageManager::sub_loop()
 {
 	while (!_need_stop)
 	{
-		_mutex.lock();
+		//_mutex.lock();
 		TUNNEL.handle();
-		_mutex.unlock();
+		//_mutex.unlock();
 	}
 }
 
@@ -207,20 +207,30 @@ void MessageManager::pack_navinfo(const csd::GnssMeasurement &gnssMsg)
 {
 	_mutex.lock();
 
-	auto vehLoc = vehState->GetTransform().location;
-	auto vehRot = vehState->GetTransform().rotation;
-	//printf("UE4 position: (%f, %f, %f, %f, %f, %f)\n", vehLoc.x, vehLoc.y, vehLoc.z, vehRot.roll, vehRot.pitch, vehRot.yaw);
+	auto loc = vehState->GetTransform().location;
+	auto rot = vehState->GetTransform().rotation;
 
 	NAVINFO.timestamp = gnssMsg.GetTimestamp() * 1000;
 	// position
+	// GeographicLib::GeoCoords coord("121:12:44E 31:16:54N"); // geographic reference point relocated to tongji
+	// NAVINFO.utm_x = coord.Easting() + loc.x;
+	// NAVINFO.utm_y = coord.Northing() - loc.y;
+	// coord.Reset(coord.Zone(), coord.Northp(), NAVINFO.utm_x, NAVINFO.utm_y);
+	// NAVINFO.latitude = coord.Latitude();
+	// NAVINFO.longitude = coord.Longitude();
+	// NAVINFO.altitude = gnssMsg.GetAltitude();
+
 	NAVINFO.latitude = gnssMsg.GetLatitude();
 	NAVINFO.longitude = gnssMsg.GetLongitude();
 	NAVINFO.altitude = gnssMsg.GetAltitude();
-	//printf("GPS: (%f, %f)\n", NAVINFO.latitude, NAVINFO.longitude);
 	coord.Reset(NAVINFO.latitude, NAVINFO.longitude);
 	NAVINFO.utm_x = coord.Easting();
 	NAVINFO.utm_y = coord.Northing();
-	//printf("error: (%f, %f)\n", NAVINFO.utm_x - vehLoc.x, NAVINFO.utm_y + vehLoc.y);
+
+	//printf("UE4 position: (%f, %f, %f, %f, %f, %f)\n", loc.x, loc.y, loc.z, rot.roll, rot.pitch, rot.yaw);
+	//printf("GPS: (%f, %f)\n", NAVINFO.latitude, NAVINFO.longitude);
+	//printf("error: (%f, %f)\n", NAVINFO.utm_x - loc.x, NAVINFO.utm_y + loc.y);
+
 	// rotation
 	/*
 	Carla use Unreal-Engine coordinate system, left-hand
@@ -228,14 +238,13 @@ void MessageManager::pack_navinfo(const csd::GnssMeasurement &gnssMsg)
 	rotation around Z (yaw): clockwise as positive
 	rotation around X and Y (roll and pitch): counter-clockwise as positive
 	*/
-	auto rot = vehState->GetTransform().rotation;
 	float heading = -rot.yaw;
 	if (heading < -180)
 		heading = heading + 360;
 	else if (heading > 180)
 		heading = heading - 360;
 	NAVINFO.angle_head = deg2rad(heading);
-	printf("UTM: ( E%f, N%f )   heading: %f\n", NAVINFO.utm_x, NAVINFO.utm_y, NAVINFO.angle_head);
+	// printf("UTM: ( E%f, N%f )   heading: %f\n", NAVINFO.utm_x, NAVINFO.utm_y, NAVINFO.angle_head);
 	NAVINFO.angle_pitch = rot.pitch;
 	NAVINFO.angle_roll = rot.roll;
 	auto rot_vel = vehState->GetAngularVelocity();
@@ -280,7 +289,8 @@ PredictedObject MessageManager::pack_one_object(cc::ActorPtr pActor)
 
 	auto rotEgo = vehState->GetTransform().rotation;
 	auto rot = pActor->GetTransform().rotation;
-	float heading = 90 + rotEgo.yaw - rot.yaw;
+	// float heading = 90 + rotEgo.yaw - rot.yaw; // relative
+	float heading = -rot.yaw; // relative
 	if (heading < -180)
 		heading = heading + 360;
 	else if (heading > 180)
@@ -329,9 +339,9 @@ PredictedObject MessageManager::pack_one_object(cc::ActorPtr pActor)
 	}
 	for (int i = 0; i < 4; ++i)
 	{
-		if (vertexs[i].x <= predObj.trajectory_point[0][0])
+		if (vertexs[i].y >= predObj.trajectory_point[1][0])
 		{
-			if (vertexs[i].y <= predObj.trajectory_point[1][0])
+			if (vertexs[i].x <= predObj.trajectory_point[0][0])
 			{
 				// left-bottom vertex
 				predObj.bounding_box[0][1] = vertexs[i].x;
@@ -346,7 +356,7 @@ PredictedObject MessageManager::pack_one_object(cc::ActorPtr pActor)
 		}
 		else
 		{
-			if (vertexs[i].y <= predObj.trajectory_point[1][0])
+			if (vertexs[i].x <= predObj.trajectory_point[0][0])
 			{
 				// right-bottom vertex
 				predObj.bounding_box[0][3] = vertexs[i].x;
@@ -439,45 +449,44 @@ void MessageManager::pack_fusionmap_raster()
 		int16_t rightCell = ceil(right / FUSIONMAP.map_resolution) + FUSIONMAP.car_center_column;
 		int16_t bottomCell = FUSIONMAP.car_center_row - floor(bottom / FUSIONMAP.map_resolution);
 		int16_t topCell = FUSIONMAP.car_center_row - ceil(top / FUSIONMAP.map_resolution);
-		int16_t xmin = leftCell > -1 ? leftCell : 0;
-		int16_t xmax = rightCell < FUSIONMAP.map_column_num ? rightCell : (FUSIONMAP.map_column_num - 1);
-		int16_t ymin = topCell > -1 ? topCell : 0;
-		int16_t ymax = bottomCell < FUSIONMAP.map_row_num ? bottomCell : (FUSIONMAP.map_row_num - 1);
+		// front x, right y
+		int16_t ymin = leftCell > -1 ? leftCell : 0;
+		int16_t ymax = rightCell < FUSIONMAP.map_column_num ? rightCell : (FUSIONMAP.map_column_num - 1);
+		int16_t xmin = topCell > -1 ? topCell : 0;
+		int16_t xmax = bottomCell < FUSIONMAP.map_row_num ? bottomCell : (FUSIONMAP.map_row_num - 1);
 
 		// rasterize obstacles into map cells
-		int16_t x = 0;
-		int16_t y = 0;
+		int16_t x = xmin;
+		int16_t y = ymin;
 
-		while (x <= 400)
+		int rastered_point_num = 0;
+
+		while (x <= xmax)
 		{
-			y = 0;
-			while (y <= 1000)
+			y = ymin;
+			while (y <= ymax)
 			{
-				double posY = -(x - FUSIONMAP.car_center_column) * FUSIONMAP.map_resolution;
-				double posX = (FUSIONMAP.car_center_row - y) * FUSIONMAP.map_resolution;
+				double posY = -(y - FUSIONMAP.car_center_column) * FUSIONMAP.map_resolution;
+				double posX = (FUSIONMAP.car_center_row - x) * FUSIONMAP.map_resolution;
 				bool isOccupied = in_area_test(posX, posY, obj);
-				if (1)
+				if (isOccupied)
 				{
 					// bit-0 history obstacle, bit-1 lidar obstacle, bit-2 moving obstacle
-					bool isHistory = false;
-					bool isMoving = (obj.velocity != 0);
+					FUSIONMAP.map_cells[x][y] |= 0b00000010;
+					++rastered_point_num;
+					bool isHistory = true;
+					bool isMoving = (fabs(obj.velocity) < 0);
 					if (isHistory)
-						FUSIONMAP.map_cells[y][x] |= 0b00000001;
-					// if (isMoving)
-					// 	FUSIONMAP.map_cells[y][x] |= 0b00000100;
-					FUSIONMAP.map_cells[y][x] =
-					//FUSIONMAP.map_cells[y][x] |= 0b00000010;
+						FUSIONMAP.map_cells[x][y] |= 0b00000001;
+					if (isMoving)
+						FUSIONMAP.map_cells[x][y] |= 0b00000100;
 				}
 				++y;
 			}
 			++x;
 		}
 	}
-
-	for (int i = 0; i < FUSIONMAP.map_cells[500].size(); ++i)
-	{
-		printf("%d", FUSIONMAP.map_cells[500][i]);
-	}
+	printf("rastered points count: %d\n", rastered_point_num);
 	_mutex.unlock();
 };
 
