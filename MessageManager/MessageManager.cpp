@@ -207,10 +207,11 @@ void MessageManager::pack_navinfo(const csd::GnssMeasurement &gnssMsg)
 {
 	_mutex.lock();
 
+	NAVINFO.timestamp = gnssMsg.GetTimestamp() * 1000;
+
 	auto loc = vehState->GetTransform().location;
 	auto rot = vehState->GetTransform().rotation;
 
-	NAVINFO.timestamp = gnssMsg.GetTimestamp() * 1000;
 	// position
 	// GeographicLib::GeoCoords coord("121:12:44E 31:16:54N"); // geographic reference point relocated to tongji
 	// NAVINFO.utm_x = coord.Easting() + loc.x;
@@ -307,8 +308,6 @@ PredictedObject MessageManager::pack_one_object(cc::ActorPtr pActor)
 		double t = TIMESTEP_OBJECTLIST_PREDICT;
 		locPred.x = loc.x + i * t * vel.x + 0.5 * pow(i * t, 2) * pActor->GetAcceleration().x;
 		locPred.y = loc.y + i * t * vel.y + 0.5 * pow(i * t, 2) * pActor->GetAcceleration().y;
-		//printf("locEgo (%4f, %4f, %4f)\n", locEgo.x, locEgo.y, locEgo.z);
-		//printf("locPred (%4f, %4f, %4f\n", locPred.x, locPred.y, locPred.z);
 		cg::Location locVehframe;
 		unreal2vehframe(locEgo, locPred, rotEgo.yaw, locVehframe);
 		predObj.trajectory_point[0][i] = locVehframe.x;
@@ -318,6 +317,7 @@ PredictedObject MessageManager::pack_one_object(cc::ActorPtr pActor)
 	auto bb = pActor->Serialize().bounding_box;
 	predObj.length = pActor->Serialize().bounding_box.extent.x * 2;
 	predObj.width = pActor->Serialize().bounding_box.extent.y * 2;
+	//printf("width: %f, length: %f\n", predObj.width, predObj.length);
 	vector<cg::Location> vertexs(4);
 	double obj_yaw = deg2rad(rot.yaw);
 
@@ -376,6 +376,7 @@ PredictedObject MessageManager::pack_one_object(cc::ActorPtr pActor)
 	// {
 	// 	printf("boundingbox point: (%f, %f)\n", predObj.bounding_box[0][i], predObj.bounding_box[1][i]);
 	// }
+
 	return predObj;
 };
 
@@ -451,8 +452,8 @@ void MessageManager::pack_fusionmap_raster()
 		float bottom = box[0][1] < box[0][3] ? box[0][1] : box[0][3];
 		float top = box[0][0] > box[0][2] ? box[0][0] : box[0][2];
 		//printf("left: %f, right: %f, bottom: %f, top: %f\n", left, right, bottom, top);
-		int16_t leftCell = -floor(left / FUSIONMAP.map_resolution) + FUSIONMAP.car_center_column;
-		int16_t rightCell = -ceil(right / FUSIONMAP.map_resolution) + FUSIONMAP.car_center_column;
+		int16_t leftCell = -ceil(left / FUSIONMAP.map_resolution) + FUSIONMAP.car_center_column;
+		int16_t rightCell = -floor(right / FUSIONMAP.map_resolution) + FUSIONMAP.car_center_column;
 		int16_t bottomCell = FUSIONMAP.car_center_row - floor(bottom / FUSIONMAP.map_resolution);
 		int16_t topCell = FUSIONMAP.car_center_row - ceil(top / FUSIONMAP.map_resolution);
 		// front x, right y

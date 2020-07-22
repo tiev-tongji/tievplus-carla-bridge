@@ -5,8 +5,8 @@
 #include <csignal>
 
 //#define ASYNC_MODE
-//#define SYNC_MODE
-#define OPT_TIME_TEST
+#define SYNC_MODE
+//#define OPT_TIME_TEST
 
 #define HIL_MODE
 //#define AUTOPILOT_MODE
@@ -90,6 +90,14 @@ public:
     {
         bpLib = carlaWorld.GetBlueprintLibrary();
         map = carlaWorld.GetMap();
+        // for (auto bp : *bpLib)
+        // {
+        //     std::cout << "blueprint ID: " << bp.GetId() << std::endl;
+        //     for (auto it = bp.begin(); it != bp.end(); ++it)
+        //     {
+        //         std::cout << "-----[attribute] " << it->GetId() << std::endl;
+        //     }
+        // }
     }
 
     void initMessager()
