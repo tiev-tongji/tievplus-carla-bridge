@@ -55,7 +55,7 @@ class MyWorld
 {
 public:
     MyWorld(cc::World &carlaWorld)
-        : carlaWorld(&carlaWorld), msgManager(ZCM_URL){};
+        : carlaWorld(&carlaWorld), msgManager(ZCM_URL), pidController(PID_PARAMETER_FILEPATH){};
     ~MyWorld()
     {
         for (auto s : sensorList)
@@ -192,7 +192,7 @@ public:
 #endif
     }
 
-    void tick(PIDController &pidController)
+    void tick()
     {
 #ifdef HIL_MODE
         double aimAcc = msgManager.CONTROL.longitudinal_acceleration_command;
@@ -276,6 +276,7 @@ public:
     vector<SharedPtr<cc::Sensor>> sensorList;
     vector<SharedPtr<cc::Vehicle>> actorList;
     MessageManager msgManager;
+    PIDController pidController;
 };
 
 void gameLoop(int16_t freq)
@@ -285,9 +286,6 @@ void gameLoop(int16_t freq)
     client.SetTimeout(10s);
     std::cout << "[INFO] Client API version : " << client.GetClientVersion() << '\n';
     std::cout << "[INFO] Server API version : " << client.GetServerVersion() << '\n';
-
-    // init PIDController
-    PIDController pidController(PID_PARAMETER_FILEPATH);
 
     // get world, blueprints and map
     cc::World carlaWorld = client.LoadWorld(TOWN_NAME);
@@ -320,12 +318,10 @@ void gameLoop(int16_t freq)
 
     world.init();
     // game loop
-    int count = 60;
-    while (count)
+    while (!keyboardIrruption)
     {
-        --count;
         auto time_point = std::chrono::steady_clock::now() + std::chrono::milliseconds(1000 / freq);
-        world.tick(pidController);
+        world.tick();
         std::this_thread::sleep_until(time_point);
     }
 }

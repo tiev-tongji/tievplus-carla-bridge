@@ -175,7 +175,11 @@ public:
 				t.join();
 		}
 #endif
+#ifdef USE_ZCM
+		TUNNEL.stop();
+#endif
 		std::cout << "Message Manager deconstructed" << std::endl;
+		std::cout << "player cnt: " << vehState.use_count() << std::endl;
 	};
 
 #ifdef USE_ZCM
