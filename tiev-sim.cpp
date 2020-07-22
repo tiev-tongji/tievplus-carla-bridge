@@ -4,11 +4,12 @@
 #include "PIDController.h"
 #include <csignal>
 
-#define ASYNC_MODE
+//#define ASYNC_MODE
 //#define SYNC_MODE
-//#define OPT_TIME_TEST
-//#define HIL_MODE
-#define AUTOPILOT_MODE
+#define OPT_TIME_TEST
+
+#define HIL_MODE
+//#define AUTOPILOT_MODE
 
 static const string HOST = "127.0.0.1"; // sercer host.
 static const uint16_t PORT = 2000;      // server post.
@@ -26,7 +27,7 @@ static volatile bool keyboardIrruption = false;
         throw std::runtime_error(#pred); \
     }
 
-// /// Pick a random element from @a range.
+// Pick a random element from @a range.
 template <typename RangeT, typename RNG>
 static auto &RandomChoice(const RangeT &range, RNG &&generator)
 {
@@ -55,31 +56,31 @@ class MyWorld
 {
 public:
     MyWorld(cc::World &carlaWorld)
-        : carlaWorld(&carlaWorld), msgManager(ZCM_URL), pidController(PID_PARAMETER_FILEPATH){};
+        : carlaWorld(carlaWorld), msgManager(ZCM_URL), pidController(PID_PARAMETER_FILEPATH){};
     ~MyWorld()
     {
         for (auto s : sensorList)
         {
             if (s->IsAlive())
             {
-                std::cout << "destroying sensors..." << std::endl;
+                std::cout << "[INFO] Destroying sensor " << s->GetDisplayId() << std::endl;
                 s->Stop();
                 s->Destroy();
             }
         }
-        for (auto a : actorList)
+        for (auto npc : npcList)
         {
-            if (a->IsAlive())
+            if (npc->IsAlive())
             {
-                std::cout << "destroying actors..." << std::endl;
-                a->Destroy();
+                std::cout << "[INFO] Destroying npc    " << npc->GetDisplayId() << std::endl;
+                npc->Destroy();
             }
         }
         if (player.get() != nullptr)
         {
             if (player->IsAlive())
             {
-                std::cout << "destroying player..." << std::endl;
+                std::cout << "[INFO] Destroying player " << player->GetDisplayId() << std::endl;
                 player->Destroy();
             }
         }
@@ -87,68 +88,22 @@ public:
 
     void setup()
     {
-        bpLib = carlaWorld->GetBlueprintLibrary();
-        map = carlaWorld->GetMap();
+        bpLib = carlaWorld.GetBlueprintLibrary();
+        map = carlaWorld.GetMap();
     }
 
-    SharedPtr<cc::Vehicle> spawnPlayer(const cg::Transform &initTransform)
-    {
-        auto vehicleBp = bpLib->Filter("vehicle");
-        auto bpPlayer = RandomChoice(*vehicleBp, rng);
-        auto veh = carlaWorld->TrySpawnActor(bpPlayer, initTransform);
-        std::cout << "Spawned player  " << veh->GetDisplayId() << '\n';
-        player = static_pointer_cast<cc::Vehicle>(veh);
-        return player;
-    }
-
-    SharedPtr<cc::Sensor> spawnSensor(const string &bpName, const cg::Transform &transform,
-                                      SharedPtr<cc::Actor> parent)
-    {
-        auto sensorBp = bpLib->Find(bpName);
-        EXPECT_TRUE(sensorBp != nullptr);
-        auto sensorActor = carlaWorld->SpawnActor(*sensorBp, transform, parent.get());
-        std::cout << "Spawned sensor  " << sensorActor->GetDisplayId() << '\n';
-        auto sensor = static_pointer_cast<cc::Sensor>(sensorActor);
-        sensorList.push_back(sensor);
-        return sensor;
-    }
-
-    SharedPtr<cc::Vehicle> spawnActor(const cg::Transform &initTransform)
-    {
-        auto vehicleBp = bpLib->Filter("vehicle");
-        auto bpActor = RandomChoice(*vehicleBp, rng);
-        auto target = carlaWorld->TrySpawnActor(bpActor, initTransform);
-        std::cout << "Spawned actor   " << target->GetDisplayId() << '\n';
-        auto targetVeh = static_pointer_cast<cc::Vehicle>(target);
-        actorList.push_back(targetVeh);
-        return targetVeh;
-    }
-
-    SharedPtr<cc::Sensor> setLidar(const cg::Transform &transform)
-    {
-        auto lidarBpLib = bpLib->Filter("sensor.lidar.ray_cast");
-        auto lidarBp = RandomChoice(*lidarBpLib, rng);
-        if (lidarBp.ContainsAttribute(""))
-        {
-            ;
-        }
-        if (lidarBp.ContainsAttribute(""))
-        {
-            ;
-        }
-    }
-
-    void init()
+    void initMessager()
     {
         msgManager.vehState = player; // msgManager need ego car's state to pack tiev msgs.
         msgManager.TUNNEL.subscribe("CANCONTROL", &MessageManager::control_handler, &msgManager);
         msgManager.subscribe_all();
-
 #ifdef ASYNC_MODE
         msgManager.publish_all_async(150, 150, 20, 20, 20);
 #endif
+    }
 
-        // rigister sensors' callback functions.
+    void rigisterSensorCallBack()
+    {
         for (auto s : sensorList)
         {
             if (start_with(s->GetTypeId(), "sensor.other.imu"))
@@ -185,15 +140,38 @@ public:
                 ;
             }
         }
+    }
 
-        // set carla inner autopilot mode.
+    void init()
+    {
+        initMessager();
+        rigisterSensorCallBack();
+
 #ifdef AUTOPILOT_MODE
+        // set carla inner autopilot mode
         player->SetAutopilot();
 #endif
     }
 
+    void relocateSpectator2egoCar()
+    {
+        // Move spectator so we can see the vehicle from the simulator window.
+        auto transform = player->GetTransform();
+        auto spectator = carlaWorld.GetSpectator();
+        transform.location -= 16.0f * transform.GetForwardVector();
+        transform.location.z += 10.0f;
+        transform.rotation.yaw += 0.0f;
+        transform.rotation.pitch = -25.0f;
+        cg::Vector3D vec(0.0f, 0.0f, 0.0f);
+        spectator->SetAngularVelocity(vec);
+        spectator->SetVelocity(vec);
+        spectator->SetTransform(transform);
+    }
+
     void tick()
     {
+        //relocateSpectator2egoCar(); // warning: this method spends a lot of time.
+
 #ifdef HIL_MODE
         double aimAcc = msgManager.CONTROL.longitudinal_acceleration_command;
         double vehAcc = msgManager.CANINFO.acceleration_x;
@@ -206,17 +184,16 @@ public:
         player->ApplyControl(control);
 #endif
 
-        msgManager.pack_objectlist(*carlaWorld->GetActors());
+        msgManager.pack_objectlist(*carlaWorld.GetActors());
         msgManager.pack_fusionmap_raster();
 
 #ifdef SYNC_MODE
-        //msgManager->publish_fusionmap();
         msgManager.publish_all();
 #endif
 
 #ifdef OPT_TIME_TEST
         auto t1 = std::chrono::steady_clock::now();
-        msgManager.pack_objectlist(*(carlaWorld->GetActors().get()));
+        msgManager.pack_objectlist(*carlaWorld.GetActors());
         auto t2 = std::chrono::steady_clock::now();
         double dr_ms_pack_objectlist = std::chrono::duration<double, std::milli>(t2 - t1).count();
 
@@ -253,28 +230,18 @@ public:
                   << "publish navinfo:    " << dr_ms_pub_navinfo << " ms\n"
                   << "publish cainfo:     " << dr_ms_pub_caninfo << " ms\n";
 #endif
-
-        // Move spectator so we can see the vehicle from the simulator window.
-        auto transform = player->GetTransform();
-        auto spectator = carlaWorld->GetSpectator();
-        transform.location -= 16.0f * transform.GetForwardVector();
-        transform.location.z += 10.0f;
-        transform.rotation.yaw += 0.0f;
-        transform.rotation.pitch = -25.0f;
-        cg::Vector3D vec(0.0f, 0.0f, 0.0f);
-        spectator->SetAngularVelocity(vec);
-        spectator->SetVelocity(vec);
-        spectator->SetTransform(transform);
     }
 
 public:
-    SharedPtr<cc::World> carlaWorld;
-    SharedPtr<cc::Vehicle> player;
+    cc::World &carlaWorld;
     SharedPtr<cc::BlueprintLibrary> bpLib;
     SharedPtr<cc::Map> map;
-    cc::Vehicle::Control control;
+
+    SharedPtr<cc::Vehicle> player;
     vector<SharedPtr<cc::Sensor>> sensorList;
-    vector<SharedPtr<cc::Vehicle>> actorList;
+    vector<SharedPtr<cc::Vehicle>> npcList;
+
+    cc::Vehicle::Control control;
     MessageManager msgManager;
     PIDController pidController;
 };
@@ -294,29 +261,50 @@ void gameLoop(int16_t freq)
 
     // spawn actors
     auto egoInitTransform = RandomChoice(world.map->GetRecommendedSpawnPoints(), rng);
-    // UTM to UE4 coord, to find specific spawn point
-    double spawnX = 427014.0254 - 426858.836012;
+    double spawnX = 427014.0254 - 426858.836012; // UTM to UE4 coord, to find specific spawn point
     double spawnY = 5427935.493100 - 5427742.755;
     egoInitTransform.location.x = spawnX;
     egoInitTransform.location.y = spawnY;
     egoInitTransform.location.z = 3;
     egoInitTransform.rotation.yaw = -180;
-    world.spawnPlayer(egoInitTransform);
+    auto vehicleBp = world.bpLib->Filter("vehicle");
+    auto bpPlayer = RandomChoice(*vehicleBp, rng);
+    auto vehEgo = world.carlaWorld.TrySpawnActor(bpPlayer, egoInitTransform);
+    std::cout << "[INFO] Spawned player  " << vehEgo->GetDisplayId() << '\n';
+    auto player = static_pointer_cast<cc::Vehicle>(vehEgo);
+    world.player = player;
 
     auto targetTransform = RandomChoice(world.map->GetRecommendedSpawnPoints(), rng);
     targetTransform.location.x = spawnX - 35;
     targetTransform.location.y = spawnY;
     targetTransform.location.z = 3;
-    world.spawnActor(targetTransform);
+    auto bpTarget = RandomChoice(*vehicleBp, rng);
+    auto target = world.carlaWorld.TrySpawnActor(bpTarget, targetTransform);
+    std::cout << "[INFO] Spawned actor   " << target->GetDisplayId() << '\n';
+    auto vehTarget = static_pointer_cast<cc::Vehicle>(target);
+    world.npcList.push_back(vehTarget);
 
     auto gnssTransform = makeTransform(0, 0, 3, 0, 0, 0);
-    world.spawnSensor("sensor.other.gnss", gnssTransform, world.player);
+    auto gnssBp = world.bpLib->Find("sensor.other.gnss");
+    EXPECT_TRUE(gnssBp != nullptr);
+    auto actorGnss = world.carlaWorld.SpawnActor(*gnssBp, gnssTransform, world.player.get());
+    std::cout << "[INFO] Spawned sensor  " << actorGnss->GetDisplayId() << '\n';
+    auto sensorGnss = static_pointer_cast<cc::Sensor>(actorGnss);
+    world.sensorList.push_back(sensorGnss);
+
     auto imuTransform = makeTransform(0, 0, 3, 0, 0, 0);
-    world.spawnSensor("sensor.other.imu", imuTransform, world.player);
+    auto imuBp = world.bpLib->Find("sensor.other.imu");
+    EXPECT_TRUE(imuBp != nullptr);
+    auto actorImu = world.carlaWorld.SpawnActor(*imuBp, imuTransform, world.player.get());
+    std::cout << "[INFO] Spawned sensor  " << actorImu->GetDisplayId() << '\n';
+    auto sensorImu = static_pointer_cast<cc::Sensor>(actorImu);
+    world.sensorList.push_back(sensorImu);
+
     // auto lidarTransform = makeTransform(0, 0, 3, 0, 0, 0);
     // auto lidar = world.spawnSensor("sensor.lidar.ray_cast", lidarTransform, world.player);
 
     world.init();
+
     // game loop
     while (!keyboardIrruption)
     {
@@ -329,5 +317,5 @@ void gameLoop(int16_t freq)
 int main()
 {
     signal(SIGINT, sig_handler);
-    gameLoop(60);
+    gameLoop(200);
 }

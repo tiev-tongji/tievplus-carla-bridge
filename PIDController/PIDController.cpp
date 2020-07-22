@@ -22,10 +22,10 @@ void PIDController::pull_parameters(const std::string &filename)
 	FILE *fp = fopen(filename.c_str(), "r");
 	if (fp == 0)
 	{
-		printf("cannot open pid_parameters.json.\n");
+		printf("[Error] cannot open pid_parameters.json.\n");
 		return;
 	}
-	printf("controller use pid_parameters.json.\n");
+	printf("[INFO] controller use pid_parameters.json.\n");
 	char readBuffer[1024];
 	rapidjson::FileReadStream is(fp, readBuffer, sizeof(readBuffer));
 	rapidjson::Document d;

@@ -24,9 +24,7 @@ add_subdirectory ("${CMAKE_SOURCE_DIR}/MessageManager")
 # compile
 add_executable (tiev-sim "tiev-sim.cpp")
 add_executable (cpp-client-demo "demo.cpp")
-add_executable (msg-test "msg_test.cpp")
 
 # link
 target_link_libraries (tiev-sim pid_controller msg_manager sfml-graphics sfml-window sfml-system)
 target_link_libraries (cpp-client-demo carla_client Detour DetourCrowd boost_filesystem Recast rpc png jpeg tiff)
-target_link_libraries (msg-test msg_manager pid_controller)

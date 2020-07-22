@@ -466,7 +466,7 @@ void MessageManager::pack_fusionmap_raster()
 		int16_t x = xmin;
 		int16_t y = ymin;
 
-		//int rastered_point_num = 0;
+		int rastered_point_num = 0;
 
 		while (x <= xmax)
 		{
@@ -480,9 +480,9 @@ void MessageManager::pack_fusionmap_raster()
 				{
 					// bit-0 history obstacle, bit-1 lidar obstacle, bit-2 moving obstacle
 					FUSIONMAP.map_cells[x][y] |= 0b00000010;
-					//++rastered_point_num;
+					++rastered_point_num;
 					bool isHistory = true;
-					bool isMoving = (fabs(obj.velocity) < 0);
+					bool isMoving = (fabs(obj.velocity) > 0.01);
 					if (isHistory)
 						FUSIONMAP.map_cells[x][y] |= 0b00000001;
 					if (isMoving)

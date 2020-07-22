@@ -73,8 +73,8 @@ using std::vector;
 
 const static double PI = 3.14159265358979323846;
 // OBJECTLIST parameters
-const static size_t POINTS_NUM_OBJECTLIST_PREDICT = 5; // including current point
-const static double TIMESTEP_OBJECTLIST_PREDICT = 1;   // unit: second
+const static size_t POINTS_NUM_OBJECTLIST_PREDICT = 10; // including current point
+const static double TIMESTEP_OBJECTLIST_PREDICT = 0.5;	// unit: second
 // tiev-plus vehicle parameters
 const static double MAX_STEERINGWHEEL = 500;
 // FUSIONMAP parameters
@@ -166,7 +166,6 @@ public:
 		{
 			if (t.joinable())
 				t.join();
-			printf("pub thread join\n");
 		}
 #ifdef USE_LCM
 		for (auto &t : _sub_threads)
@@ -178,8 +177,6 @@ public:
 #ifdef USE_ZCM
 		TUNNEL.stop();
 #endif
-		std::cout << "Message Manager deconstructed" << std::endl;
-		std::cout << "player cnt: " << vehState.use_count() << std::endl;
 	};
 
 #ifdef USE_ZCM
