@@ -84,6 +84,7 @@ const static int16_t MAP_COLUMN_NUM = 401;
 const static int16_t MAP_CENTER_ROW = 850;
 const static int16_t MAP_CENTER_COLUMN = 200;
 const static vector<uint8_t> MAP_ROW_0(MAP_COLUMN_NUM);
+const static double LIDAR_ROTATE_FREQUENCY = 20;
 
 inline double norm2(double x, double y, double z = 0) { return sqrt(x * x + y * y + z * z); }
 inline double rad2deg(double rad) { return rad / PI * 180.0; }
@@ -233,7 +234,8 @@ public:
 	SharedPtr<cc::Vehicle> vehState;		   // to cache ego car's state from carla, designed for sensor callback in carla.
 
 private:
-	std::vector<std::thread> _pub_threads;
+	std::vector<std::thread>
+		_pub_threads;
 #ifdef USE_LCM
 	std::vector<std::thread> _sub_threads;
 #endif

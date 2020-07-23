@@ -245,7 +245,7 @@ void MessageManager::pack_navinfo(const csd::GnssMeasurement &gnssMsg)
 	else if (heading > 180)
 		heading = heading - 360;
 	NAVINFO.angle_head = deg2rad(heading);
-	// printf("UTM: ( E%f, N%f )   heading: %f\n", NAVINFO.utm_x, NAVINFO.utm_y, NAVINFO.angle_head);
+	//printf("UTM: ( E%f, N%f )   heading: %f\n", NAVINFO.utm_x, NAVINFO.utm_y, NAVINFO.angle_head);
 	NAVINFO.angle_pitch = rot.pitch;
 	NAVINFO.angle_roll = rot.roll;
 	auto rot_vel = vehState->GetAngularVelocity();
@@ -433,7 +433,7 @@ void MessageManager::pack_fusionmap_raster()
 	MAP_HISTORY_CELLS = FUSIONMAP.map_cells;
 	FUSIONMAP.map_cells.assign(MAP_ROW_NUM, MAP_ROW_0);
 
-	FUSIONMAP.time_stamp = NAVINFO.timestamp;
+	//FUSIONMAP.time_stamp = NAVINFO.timestamp;
 	FUSIONMAP.car_utm_position_x = NAVINFO.utm_x;
 	FUSIONMAP.car_utm_position_y = NAVINFO.utm_y;
 	FUSIONMAP.car_heading = NAVINFO.angle_head;
@@ -483,7 +483,7 @@ void MessageManager::pack_fusionmap_raster()
 					FUSIONMAP.map_cells[x][y] |= 0b00000010;
 					++rastered_point_num;
 					bool isHistory = true;
-					bool isMoving = (fabs(obj.velocity) > 0.01);
+					bool isMoving = (fabs(obj.velocity) > 0.1);
 					if (isHistory)
 						FUSIONMAP.map_cells[x][y] |= 0b00000001;
 					if (isMoving)
@@ -502,36 +502,37 @@ void MessageManager::pack_fusionmap_lidar(const csd::LidarMeasurement &lidarMsg)
 {
 	_mutex.lock();
 
-	MAP_HISTORY_CELLS = FUSIONMAP.map_cells;
-	FUSIONMAP.map_cells.assign(MAP_ROW_NUM, MAP_ROW_0);
-
-	FUSIONMAP.time_stamp = lidarMsg.GetTimestamp() * 1000;
-	FUSIONMAP.car_utm_position_x = NAVINFO.utm_x;
-	FUSIONMAP.car_utm_position_y = NAVINFO.utm_y;
-	FUSIONMAP.car_heading = NAVINFO.angle_head;
-	FUSIONMAP.map_resolution = FUSIONMAP_RESOLUTION;
-	FUSIONMAP.map_row_num = MAP_ROW_NUM;
-	FUSIONMAP.map_column_num = MAP_COLUMN_NUM;
-	FUSIONMAP.car_center_column = MAP_CENTER_COLUMN;
-	FUSIONMAP.car_center_row = MAP_CENTER_ROW;
-
-	printf("frame %d\n", lidarMsg.GetFrame());
-	printf("timestamp %4f\n", lidarMsg.GetTimestamp());
-	printf("lidarMsg channel count: %d\n", lidarMsg.GetChannelCount());
-	for (size_t i = 0; i < lidarMsg.GetChannelCount(); ++i)
+	// static Eigen::Matrix4Xf points(6400);
+	double duration = lidarMsg.GetTimestamp() * 1000 - FUSIONMAP.time_stamp;
+	if (duration < 1000 / LIDAR_ROTATE_FREQUENCY)
 	{
-		printf("lidarMsg point count  : %d\n", lidarMsg.GetPointCount(i));
+		// 	for (size_t i = 0; i < lidarMsg.size(); ++i)
+		// 	{
+		// 		points(0, i) = lidarMsg[i].point.x;
+		// 		points(1, i) = lidarMsg[i].point.y;
+		// 		points(2, i) = lidarMsg[i].point.z;
+		// 	}
+		std::cout << "-----------------stacked " << lidarMsg.size() << " points" << std::endl;
+		printf("frame %d\n", lidarMsg.GetFrame());
+		printf("timestamp %4f\n", lidarMsg.GetTimestamp());
+		printf("lidarMsg channel count: %d\n", lidarMsg.GetChannelCount());
+		printf("total points num: %d\n", lidarMsg.size());
 	}
-	float intensity = lidarMsg.begin()->intensity;
-	float x = lidarMsg.begin()->point.x;
-	float y = lidarMsg.begin()->point.y;
-	float z = lidarMsg.begin()->point.z;
-	printf("first point :(%4f, %4f, %4f : %4f)\n", x, y, z, intensity);
-	printf("total points num: %d\n", lidarMsg.size());
-
-	for (size_t i = 0; i < lidarMsg.size(); ++i)
+	else
 	{
-		auto p = lidarMsg[i].point;
+		std::cout << "=======================================pack one fusionmap frame" << std::endl;
+		MAP_HISTORY_CELLS = FUSIONMAP.map_cells;
+		FUSIONMAP.map_cells.assign(MAP_ROW_NUM, MAP_ROW_0);
+
+		FUSIONMAP.time_stamp = lidarMsg.GetTimestamp() * 1000;
+		FUSIONMAP.car_utm_position_x = NAVINFO.utm_x;
+		FUSIONMAP.car_utm_position_y = NAVINFO.utm_y;
+		FUSIONMAP.car_heading = NAVINFO.angle_head;
+		FUSIONMAP.map_resolution = FUSIONMAP_RESOLUTION;
+		FUSIONMAP.map_row_num = MAP_ROW_NUM;
+		FUSIONMAP.map_column_num = MAP_COLUMN_NUM;
+		FUSIONMAP.car_center_column = MAP_CENTER_COLUMN;
+		FUSIONMAP.car_center_row = MAP_CENTER_ROW;
 	}
 	_mutex.unlock();
 }
