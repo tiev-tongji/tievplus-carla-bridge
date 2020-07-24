@@ -258,7 +258,7 @@ void gameLoop(int16_t freq)
 {
     // connect to server
     auto client = cc::Client(HOST, PORT, WORKER_THREADS);
-    client.SetTimeout(10s);
+    client.SetTimeout(3s);
     std::cout << "[INFO] Client API version : " << client.GetClientVersion() << '\n';
     std::cout << "[INFO] Server API version : " << client.GetServerVersion() << '\n';
 

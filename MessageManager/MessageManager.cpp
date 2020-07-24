@@ -502,25 +502,32 @@ void MessageManager::pack_fusionmap_lidar(const csd::LidarMeasurement &lidarMsg)
 {
 	_mutex.lock();
 
-	// static Eigen::Matrix4Xf points(6400);
+	auto t1 = std::chrono::steady_clock::now();
+
 	double duration = lidarMsg.GetTimestamp() * 1000 - FUSIONMAP.time_stamp;
 	if (duration < 1000 / LIDAR_ROTATE_FREQUENCY)
 	{
-		// 	for (size_t i = 0; i < lidarMsg.size(); ++i)
-		// 	{
-		// 		points(0, i) = lidarMsg[i].point.x;
-		// 		points(1, i) = lidarMsg[i].point.y;
-		// 		points(2, i) = lidarMsg[i].point.z;
-		// 	}
-		std::cout << "-----------------stacked " << lidarMsg.size() << " points" << std::endl;
-		printf("frame %d\n", lidarMsg.GetFrame());
-		printf("timestamp %4f\n", lidarMsg.GetTimestamp());
-		printf("lidarMsg channel count: %d\n", lidarMsg.GetChannelCount());
-		printf("total points num: %d\n", lidarMsg.size());
+
+		for (size_t i = 0; i < lidarMsg.size(); ++i)
+		{
+			vector<float> vec{lidarMsg[i].point.x, lidarMsg[i].point.y, lidarMsg[i].point.z};
+			pcdRawData.push_back(vec);
+		}
+		// std::cout << "-----------------stacked " << lidarMsg.size() << " points" << std::endl;
+		// printf("frame %d\n", lidarMsg.GetFrame());
+		// printf("timestamp %4f\n", lidarMsg.GetTimestamp() * 1000);
+		// printf("lidarMsg channel count: %d\n", lidarMsg.GetChannelCount());
+		// printf("total points num: %d\n", lidarMsg.size());
 	}
 	else
 	{
-		std::cout << "=======================================pack one fusionmap frame" << std::endl;
+		Eigen::Matrix3Xf points(3, pcdRawData.size());
+		for (size_t i = 0; i < pcdRawData.size(); ++i)
+		{
+			points.col(i) = Eigen::Vector3f::Map(&pcdRawData[i][0], pcdRawData[i].size());
+		}
+		pcdRawData.clear();
+
 		MAP_HISTORY_CELLS = FUSIONMAP.map_cells;
 		FUSIONMAP.map_cells.assign(MAP_ROW_NUM, MAP_ROW_0);
 
@@ -533,6 +540,18 @@ void MessageManager::pack_fusionmap_lidar(const csd::LidarMeasurement &lidarMsg)
 		FUSIONMAP.map_column_num = MAP_COLUMN_NUM;
 		FUSIONMAP.car_center_column = MAP_CENTER_COLUMN;
 		FUSIONMAP.car_center_row = MAP_CENTER_ROW;
+
+		points *= 1 / FUSIONMAP_RESOLUTION;
+
+		for (size_t i = 0; i < pcdRawData.size(); ++i)
+		{
+			;
+		}
 	}
+
+	auto t2 = std::chrono::steady_clock::now();
+	double dr_ms_pack_fusionmap = std::chrono::duration<double, std::milli>(t2 - t1).count();
+	std::cout << "time to pack lidar points: " << dr_ms_pack_fusionmap << std::endl;
+
 	_mutex.unlock();
 }
