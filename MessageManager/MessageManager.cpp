@@ -169,7 +169,8 @@ void MessageManager::pack_caninfo(const csd::IMUMeasurement &imuMsg)
 	CANINFO.eps_permission = 0;
 	CANINFO.esp_permission = 0;
 
-	CANINFO.gear_state = vehState->GetControl().gear; // TODO
+	CANINFO.gear_state = 4;
+	//CANINFO.gear_state = vehState->GetControl().gear; // TODO
 	CANINFO.epb_state = 0;
 	CANINFO.brake_pedal_state = vehState->GetControl().brake == 0 ? 0 : 1;
 

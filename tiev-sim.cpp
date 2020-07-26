@@ -8,8 +8,8 @@
 //#define SYNC_MODE
 //#define OPT_TIME_TEST
 
-//#define HIL_MODE
-#define AUTOPILOT_MODE
+#define HIL_MODE
+//#define AUTOPILOT_MODE
 
 static const string HOST = "127.0.0.1"; // sercer host.
 static const uint16_t PORT = 2000;      // server post.
@@ -103,7 +103,7 @@ public:
     void initMessager()
     {
         msgManager.vehState = player; // msgManager need ego car's state to pack tiev msgs.
-        msgManager.TUNNEL.subscribe("CANCONTROL", &MessageManager::control_handler, &msgManager);
+        msgManager.TUNNEL.subscribe("MsgChassisCommandSignal", &MessageManager::control_handler, &msgManager);
         msgManager.subscribe_all();
 #ifdef ASYNC_MODE
         msgManager.publish_all_async(150, 150, 20, 20, 20);
@@ -181,14 +181,25 @@ public:
         relocateSpectator2egoCar(); // warning: this method spends a lot of time.
 
 #ifdef HIL_MODE
-        double aimAcc = msgManager.CONTROL.longitudinal_acceleration_command;
-        double vehAcc = msgManager.CANINFO.acceleration_x;
-        double aimSteer = msgManager.CONTROL.steer_wheel_angle_command;
-        double vehSteer = msgManager.CANINFO.steer_wheel_angle;
-        pidController.tick(aimAcc, aimSteer, vehAcc, vehSteer, true);
-        control.brake = pidController.control.brake;
-        control.throttle = pidController.control.throttle;
-        control.steer = pidController.control.steer;
+        // double aimAcc = msgManager.CONTROL.longitudinal_acceleration_command;
+        // double vehAcc = msgManager.CANINFO.acceleration_x;
+        // double aimSteer = -msgManager.CONTROL.steer_wheel_angle_command;
+        // double vehSteer = -msgManager.CANINFO.steer_wheel_angle;
+        //pidController.tick(aimAcc, aimSteer, vehAcc, vehSteer, true);
+        //control.brake = pidController.control.brake;
+        //control.throttle = pidController.control.throttle;
+        //control.steer = pidController.control.steer;
+        if (msgManager.CONTROL.longitudinal_acceleration_command > 0)
+        {
+            control.throttle = msgManager.CONTROL.longitudinal_acceleration_command / 5;
+            control.brake = 0;
+        }
+        else
+        {
+            control.throttle = 0;
+            control.brake = -msgManager.CONTROL.longitudinal_acceleration_command / 5;
+        }
+        control.steer = -msgManager.CONTROL.steer_wheel_angle_command / 500;
         player->ApplyControl(control);
 #endif
 
@@ -281,7 +292,9 @@ void gameLoop(int16_t freq)
     auto vehEgo = world.carlaWorld.TrySpawnActor(bpPlayer, egoInitTransform);
     std::cout << "[INFO] Spawned player  " << vehEgo->GetDisplayId() << '\n';
     auto player = static_pointer_cast<cc::Vehicle>(vehEgo);
+    cg::Vector3D vec(-10, 0, 0);
     world.player = player;
+    world.player->SetVelocity(vec);
 
     auto targetTransform = RandomChoice(world.map->GetRecommendedSpawnPoints(), rng);
     targetTransform.location.x = spawnX - 100;
@@ -322,9 +335,7 @@ void gameLoop(int16_t freq)
     std::cout << "[INFO] Spawned sensor  " << actorLidar->GetDisplayId() << "\n";
     auto sensorLidar = static_pointer_cast<cc::Sensor>(actorLidar);
     world.sensorList.push_back(sensorLidar);
-
     world.init();
-
     // game loop
     while (!keyboardIrruption)
     {
