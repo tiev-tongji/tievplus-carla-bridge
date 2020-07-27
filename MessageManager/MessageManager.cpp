@@ -185,6 +185,7 @@ void MessageManager::pack_caninfo(const csd::IMUMeasurement &imuMsg)
 
 	CANINFO.acceleration_x = imuMsg.GetAccelerometer().x;
 	CANINFO.acceleration_y = imuMsg.GetAccelerometer().y;
+	std::cout << "imu x: " << imuMsg.GetAccelerometer().x << "  imu y: " << imuMsg.GetAccelerometer().y << "  imu z: " << imuMsg.GetAccelerometer().z << std::endl;
 
 	CANINFO.steer_wheel_angle = -vehState->GetControl().steer * MAX_STEERINGWHEEL;
 	CANINFO.steer_angular_speed = 0;
@@ -254,11 +255,15 @@ void MessageManager::pack_navinfo(const csd::GnssMeasurement &gnssMsg)
 	// speed, velocity, acceleration
 	// TODO:rear axle to front axle
 	auto vel = vehState->GetVelocity();
+	auto acc = vehState->GetAcceleration();
 	NAVINFO.speed = norm2(vel.x, vel.y);
 	NAVINFO.velocity_east = vel.x;
 	NAVINFO.velocity_north = -vel.y; // East-South-Up coordinate in Carla.
+	//std::cout << "acc: " << norm2(acc.x, acc.y) << std::endl;
+	//std::cout << "vel: " << NAVINFO.speed << std::endl;
 	NAVINFO.acceleration_x = CANINFO.acceleration_x;
 	NAVINFO.acceleration_y = CANINFO.acceleration_y;
+	//std::cout << "accX: " << NAVINFO.acceleration_x << "   accY: " << NAVINFO.acceleration_y << std::endl;
 	//status
 	NAVINFO.curvature = 0;
 	NAVINFO.HPOS_accuracy = 0.01;
