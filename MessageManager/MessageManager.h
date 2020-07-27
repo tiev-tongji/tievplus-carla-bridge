@@ -201,7 +201,7 @@ public:
 						   int freq_objectlist = 60, int freq_lanes = 60);
 	void subscribe_all();
 
-	void pack_caninfo(const csd::IMUMeasurement &imuMsg);
+	void pack_caninfo();
 	void pack_navinfo(const csd::GnssMeasurement &gnssMsg);
 	void pack_objectlist(const cc::ActorList &actors);
 	void pack_fusionmap_lidar(const csd::LidarMeasurement &lidarMsg);

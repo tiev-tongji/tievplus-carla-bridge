@@ -116,10 +116,7 @@ public:
         {
             if (start_with(s->GetTypeId(), "sensor.other.imu"))
             {
-                s->Listen([this](auto data) {
-                    auto imuMsg = static_pointer_cast<csd::IMUMeasurement>(data);
-                    this->msgManager.pack_caninfo(*imuMsg);
-                });
+                ;
             }
             else if (start_with(s->GetTypeId(), "sensor.other.gnss"))
             {
@@ -154,7 +151,6 @@ public:
     {
         initMessager();
         rigisterSensorCallback();
-
 #ifdef AUTOPILOT_MODE
         // set carla inner autopilot mode
         player->SetAutopilot();
@@ -185,10 +181,13 @@ public:
         // double vehAcc = msgManager.CANINFO.acceleration_x;
         // double aimSteer = -msgManager.CONTROL.steer_wheel_angle_command;
         // double vehSteer = -msgManager.CANINFO.steer_wheel_angle;
-        //pidController.tick(aimAcc, aimSteer, vehAcc, vehSteer, true);
-        //control.brake = pidController.control.brake;
-        //control.throttle = pidController.control.throttle;
-        //control.steer = pidController.control.steer;
+        // pidController.tick(aimAcc, aimSteer, vehAcc, vehSteer, true);
+        // control.brake = pidController.control.brake;
+        // control.throttle = pidController.control.throttle;
+        // control.steer = pidController.control.steer;
+
+        //msgManager.CONTROL.longitudinal_acceleration_command = 2.5;
+        //msgManager.CONTROL.steer_wheel_angle_command = 0;
         if (msgManager.CONTROL.longitudinal_acceleration_command > 0)
         {
             control.throttle = msgManager.CONTROL.longitudinal_acceleration_command / 5;
@@ -200,9 +199,13 @@ public:
             control.brake = -msgManager.CONTROL.longitudinal_acceleration_command / 5;
         }
         control.steer = -msgManager.CONTROL.steer_wheel_angle_command / 500;
+        control.reverse = msgManager.CONTROL.car_gear_command == 2;
+        control.hand_brake = msgManager.CONTROL.car_gear_command == 1;
+        std::cout << player->GetPhysicsControl().GetForwardGears()[control.gear].ratio << std::endl;
         player->ApplyControl(control);
 #endif
 
+        msgManager.pack_caninfo();
         msgManager.pack_objectlist(*carlaWorld.GetActors());
         msgManager.pack_fusionmap_raster();
 
@@ -292,7 +295,7 @@ void gameLoop(int16_t freq)
     auto vehEgo = world.carlaWorld.TrySpawnActor(bpPlayer, egoInitTransform);
     std::cout << "[INFO] Spawned player  " << vehEgo->GetDisplayId() << '\n';
     auto player = static_pointer_cast<cc::Vehicle>(vehEgo);
-    cg::Vector3D vec(-10, 0, 0);
+    cg::Vector3D vec(0, 0, 0);
     world.player = player;
     world.player->SetVelocity(vec);
 
@@ -314,13 +317,13 @@ void gameLoop(int16_t freq)
     auto sensorGnss = static_pointer_cast<cc::Sensor>(actorGnss);
     world.sensorList.push_back(sensorGnss);
 
-    auto imuTransform = makeTransform(0, 0, 3, 0, 0, 0);
-    auto imuBp = world.bpLib->Find("sensor.other.imu");
-    EXPECT_TRUE(imuBp != nullptr);
-    auto actorImu = world.carlaWorld.SpawnActor(*imuBp, imuTransform, world.player.get());
-    std::cout << "[INFO] Spawned sensor  " << actorImu->GetDisplayId() << '\n';
-    auto sensorImu = static_pointer_cast<cc::Sensor>(actorImu);
-    world.sensorList.push_back(sensorImu);
+    // auto imuTransform = makeTransform(0, 0, 3, 0, 0, 0);
+    // auto imuBp = world.bpLib->Find("sensor.other.imu");
+    // EXPECT_TRUE(imuBp != nullptr);
+    // auto actorImu = world.carlaWorld.SpawnActor(*imuBp, imuTransform, world.player.get());
+    // std::cout << "[INFO] Spawned sensor  " << actorImu->GetDisplayId() << '\n';
+    // auto sensorImu = static_pointer_cast<cc::Sensor>(actorImu);
+    // world.sensorList.push_back(sensorImu);
 
     auto lidarTransform = makeTransform(0, 0, 3, 0, 0, 0);
     auto lidarBp = *world.bpLib->Find("sensor.lidar.ray_cast");
@@ -336,6 +339,7 @@ void gameLoop(int16_t freq)
     auto sensorLidar = static_pointer_cast<cc::Sensor>(actorLidar);
     world.sensorList.push_back(sensorLidar);
     world.init();
+
     // game loop
     while (!keyboardIrruption)
     {
@@ -348,5 +352,5 @@ void gameLoop(int16_t freq)
 int main()
 {
     signal(SIGINT, sig_handler);
-    gameLoop(200);
+    gameLoop(100);
 }
