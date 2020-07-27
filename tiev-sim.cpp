@@ -4,12 +4,12 @@
 #include "PIDController.h"
 #include <csignal>
 
-#define ASYNC_MODE
-//#define SYNC_MODE
+//#define ASYNC_MODE
+#define SYNC_MODE
 //#define OPT_TIME_TEST
 
-#define HIL_MODE
-//#define AUTOPILOT_MODE
+//#define HIL_MODE
+#define AUTOPILOT_MODE
 
 static const string HOST = "127.0.0.1"; // sercer host.
 static const uint16_t PORT = 2000;      // server post.
@@ -149,6 +149,7 @@ public:
 
     void init()
     {
+        spectator = carlaWorld.GetSpectator();
         initMessager();
         rigisterSensorCallback();
 #ifdef AUTOPILOT_MODE
@@ -161,7 +162,6 @@ public:
     {
         // Move spectator so we can see the vehicle from the simulator window.
         auto transform = player->GetTransform();
-        auto spectator = carlaWorld.GetSpectator();
         transform.location -= 16.0f * transform.GetForwardVector();
         transform.location.z += 10.0f;
         transform.rotation.yaw += 0.0f;
@@ -174,6 +174,7 @@ public:
 
     void tick()
     {
+        //carlaWorld.WaitForTick(1s);
         relocateSpectator2egoCar(); // warning: this method spends a lot of time.
 
 #ifdef HIL_MODE
@@ -260,6 +261,7 @@ public:
     SharedPtr<cc::Map> map;
 
     SharedPtr<cc::Vehicle> player;
+    SharedPtr<cc::Actor> spectator;
     vector<SharedPtr<cc::Sensor>> sensorList;
     vector<SharedPtr<cc::Vehicle>> npcList;
 
@@ -277,8 +279,8 @@ void gameLoop(int16_t freq)
     std::cout << "[INFO] Server API version : " << client.GetServerVersion() << '\n';
 
     // get world, blueprints and map
-    cc::World carlaWorld = client.LoadWorld(TOWN_NAME);
-    //cc::World carlaWorld = client.GetWorld();
+    //cc::World carlaWorld = client.LoadWorld(TOWN_NAME);
+    cc::World carlaWorld = client.GetWorld();
     MyWorld world(carlaWorld);
     world.setup();
 
@@ -290,19 +292,36 @@ void gameLoop(int16_t freq)
     egoInitTransform.location.y = spawnY;
     egoInitTransform.location.z = 3;
     egoInitTransform.rotation.yaw = -180;
-    auto vehicleBp = world.bpLib->Filter("vehicle");
-    auto bpPlayer = RandomChoice(*vehicleBp, rng);
+    //auto bpPlayer = RandomChoice(*vehicleBp, rng);
+    auto bpPlayer = *world.bpLib->Find("vehicle.tesla.model3");
     auto vehEgo = world.carlaWorld.TrySpawnActor(bpPlayer, egoInitTransform);
     std::cout << "[INFO] Spawned player  " << vehEgo->GetDisplayId() << '\n';
     auto player = static_pointer_cast<cc::Vehicle>(vehEgo);
     cg::Vector3D vec(0, 0, 0);
     world.player = player;
     world.player->SetVelocity(vec);
+    auto egoPhysics = player->GetPhysicsControl();
+    //std::cout << "wheel radius: " << egoPhysics.wheels[0].radius << std::endl;
+    //std::cout << "mass center: (x,y,z) = (" << egoPhysics.center_of_mass.x << ", " << egoPhysics.center_of_mass.y << ", " << egoPhysics.center_of_mass.z << std::endl;
+    //std::cout << "use auto gear-box: " << egoPhysics.use_gear_autobox << std::endl;
+    egoPhysics.mass = 1854;
+    auto massCenter = egoPhysics.center_of_mass;
+    massCenter.x = 1.436;
+    massCenter.y = 0;
+    //massCenter.z = -0.526; // TODO: not sure center of mass in carla refers to ground plane or rear axle
+    egoPhysics.wheels[0].radius = 33;
+    egoPhysics.wheels[0].max_steer_angle = 74;
+    egoPhysics.wheels[1].radius = 33;
+    egoPhysics.wheels[1].max_steer_angle = 74;
+    egoPhysics.wheels[2].radius = 33;
+    egoPhysics.wheels[3].radius = 33;
+    player->ApplyPhysicsControl(egoPhysics);
 
     auto targetTransform = RandomChoice(world.map->GetRecommendedSpawnPoints(), rng);
     targetTransform.location.x = spawnX - 100;
     targetTransform.location.y = spawnY;
     targetTransform.location.z = 3;
+    auto vehicleBp = world.bpLib->Filter("vehicle");
     auto bpTarget = RandomChoice(*vehicleBp, rng);
     auto target = world.carlaWorld.TrySpawnActor(bpTarget, targetTransform);
     std::cout << "[INFO] Spawned npc     " << target->GetDisplayId() << '\n';

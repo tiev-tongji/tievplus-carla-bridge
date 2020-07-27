@@ -175,7 +175,6 @@ void MessageManager::pack_caninfo()
 		CANINFO.gear_state = 2;
 	else
 		CANINFO.gear_state = 4;
-	CANINFO.brake_pedal_state = vehState->GetControl().brake == 0 ? 0 : 1;
 
 	auto vel = vehState->GetVelocity();
 	CANINFO.velocity = mps2kph(norm2(vel.x, vel.y));
@@ -190,6 +189,7 @@ void MessageManager::pack_caninfo()
 	double yaw = deg2rad(vehState->GetTransform().rotation.yaw);
 	CANINFO.acceleration_x = acc.x * cos(yaw) + acc.y * sin(yaw);
 	CANINFO.acceleration_y = acc.x * sin(yaw) - acc.y * cos(yaw);
+	//std::cout << "accX: " << CANINFO.acceleration_x << " || accY: " << CANINFO.acceleration_y << std::endl;
 
 	CANINFO.steer_wheel_angle = -vehState->GetControl().steer * MAX_STEERINGWHEEL;
 	CANINFO.steer_angular_speed = 0;
@@ -197,6 +197,7 @@ void MessageManager::pack_caninfo()
 	CANINFO.motor_torque = 0;
 	CANINFO.brake_deepness = vehState->GetControl().brake;
 	CANINFO.accelerate_deepness = vehState->GetControl().throttle;
+	CANINFO.brake_pedal_state = vehState->GetControl().brake == 0 ? 0 : 1;
 
 	CANINFO.lamp_turn_l = 0;
 	CANINFO.lamp_turn_r = 0;
