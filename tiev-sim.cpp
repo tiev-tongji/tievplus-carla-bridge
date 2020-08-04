@@ -261,7 +261,7 @@ public:
     SharedPtr<cc::Actor> spectator;
     vector<SharedPtr<cc::Sensor>> sensorList;
     vector<SharedPtr<cc::Vehicle>> npcList;
-    vector<SharePtr<cc::Actor>> propList;
+    vector<SharedPtr<cc::Actor>> propList;
 
     cc::Vehicle::Control control;
     MessageManager msgManager;
