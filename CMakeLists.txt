@@ -29,3 +29,4 @@ add_executable (cpp-client-demo "demo.cpp")
 # link
 target_link_libraries (tiev-sim pid_controller msg_manager)
 target_link_libraries (cpp-client-demo carla_client Detour DetourCrowd libboost_filesystem-vc141-mt-x64-1_72 Recast rpc libpng zlib shlwapi)
+

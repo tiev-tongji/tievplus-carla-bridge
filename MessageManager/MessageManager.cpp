@@ -32,9 +32,9 @@ void MessageManager::sub_loop()
 {
 	while (!_need_stop)
 	{
-		_mutex.lock();
+		//_mutex.lock();
 		TUNNEL.handle();
-		_mutex.unlock();
+		//_mutex.unlock();
 	}
 }
 
@@ -154,11 +154,10 @@ void MessageManager::publish_all_async(int freq_caninfo, int freq_navinfo, int f
 	}
 }
 
-void MessageManager::pack_caninfo(const csd::IMUMeasurement &imuMsg)
+void MessageManager::pack_caninfo()
 {
 	_mutex.lock();
-	// only need velocity, yaww_rate, steer_wheel_angle, acceleration_x/y
-	CANINFO.timestamp = imuMsg.GetTimestamp() * 1000;
+	CANINFO.timestamp = NAVINFO.timestamp;
 
 	CANINFO.drive_mode = 0;
 	CANINFO.epb_mode = 0;
@@ -168,13 +167,17 @@ void MessageManager::pack_caninfo(const csd::IMUMeasurement &imuMsg)
 	CANINFO.motor_mode = 0;
 	CANINFO.eps_permission = 0;
 	CANINFO.esp_permission = 0;
-
-	CANINFO.gear_state = vehState->GetControl().gear; // TODO
 	CANINFO.epb_state = 0;
-	CANINFO.brake_pedal_state = vehState->GetControl().brake == 0 ? 0 : 1;
+
+	if (vehState->GetControl().hand_brake)
+		CANINFO.gear_state = 1;
+	else if (vehState->GetControl().reverse)
+		CANINFO.gear_state = 2;
+	else
+		CANINFO.gear_state = 4;
 
 	auto vel = vehState->GetVelocity();
-	CANINFO.velocity = mps2kph(norm2(vel.x, vel.y, vel.z));
+	CANINFO.velocity = mps2kph(norm2(vel.x, vel.y));
 	CANINFO.wheel_speed_fl = 0;
 	CANINFO.wheel_speed_fr = 0;
 	CANINFO.wheel_speed_rl = 0;
@@ -182,8 +185,11 @@ void MessageManager::pack_caninfo(const csd::IMUMeasurement &imuMsg)
 
 	CANINFO.yaw_rate = deg2rad(-vehState->GetAngularVelocity().z);
 
-	CANINFO.acceleration_x = imuMsg.GetAccelerometer().x;
-	CANINFO.acceleration_y = imuMsg.GetAccelerometer().y;
+	auto acc = vehState->GetAcceleration();
+	double yaw = deg2rad(vehState->GetTransform().rotation.yaw);
+	CANINFO.acceleration_x = acc.x * cos(yaw) + acc.y * sin(yaw);
+	CANINFO.acceleration_y = acc.x * sin(yaw) - acc.y * cos(yaw);
+	//std::cout << "accX: " << CANINFO.acceleration_x << " || accY: " << CANINFO.acceleration_y << std::endl;
 
 	CANINFO.steer_wheel_angle = -vehState->GetControl().steer * MAX_STEERINGWHEEL;
 	CANINFO.steer_angular_speed = 0;
@@ -191,6 +197,7 @@ void MessageManager::pack_caninfo(const csd::IMUMeasurement &imuMsg)
 	CANINFO.motor_torque = 0;
 	CANINFO.brake_deepness = vehState->GetControl().brake;
 	CANINFO.accelerate_deepness = vehState->GetControl().throttle;
+	CANINFO.brake_pedal_state = vehState->GetControl().brake == 0 ? 0 : 1;
 
 	CANINFO.lamp_turn_l = 0;
 	CANINFO.lamp_turn_r = 0;
@@ -201,21 +208,37 @@ void MessageManager::pack_caninfo(const csd::IMUMeasurement &imuMsg)
 	CANINFO.emergency_control_state = 0;
 
 	_mutex.unlock();
-};
+}
 
 void MessageManager::pack_navinfo(const csd::GnssMeasurement &gnssMsg)
 {
 	_mutex.lock();
 
 	NAVINFO.timestamp = gnssMsg.GetTimestamp() * 1000;
+
+	auto loc = vehState->GetTransform().location;
+	auto rot = vehState->GetTransform().rotation;
+
 	// position
+	// GeographicLib::GeoCoords coord("121:12:44E 31:16:54N"); // geographic reference point relocated to tongji
+	// NAVINFO.utm_x = coord.Easting() + loc.x;
+	// NAVINFO.utm_y = coord.Northing() - loc.y;
+	// coord.Reset(coord.Zone(), coord.Northp(), NAVINFO.utm_x, NAVINFO.utm_y);
+	// NAVINFO.latitude = coord.Latitude();
+	// NAVINFO.longitude = coord.Longitude();
+	// NAVINFO.altitude = gnssMsg.GetAltitude();
+
 	NAVINFO.latitude = gnssMsg.GetLatitude();
 	NAVINFO.longitude = gnssMsg.GetLongitude();
-	//printf("GPS lat: %3f, lon: %3f\n", NAVINFO.latitude, NAVINFO.longitude);
 	NAVINFO.altitude = gnssMsg.GetAltitude();
 	coord.Reset(NAVINFO.latitude, NAVINFO.longitude);
 	NAVINFO.utm_x = coord.Easting();
 	NAVINFO.utm_y = coord.Northing();
+
+	//printf("UE4 position: (%f, %f, %f, %f, %f, %f)\n", loc.x, loc.y, loc.z, rot.roll, rot.pitch, rot.yaw);
+	//printf("GPS: (%f, %f)\n", NAVINFO.latitude, NAVINFO.longitude);
+	//printf("error: (%f, %f)\n", NAVINFO.utm_x - loc.x, NAVINFO.utm_y + loc.y);
+
 	// rotation
 	/*
 	Carla use Unreal-Engine coordinate system, left-hand
@@ -223,7 +246,6 @@ void MessageManager::pack_navinfo(const csd::GnssMeasurement &gnssMsg)
 	rotation around Z (yaw): clockwise as positive
 	rotation around X and Y (roll and pitch): counter-clockwise as positive
 	*/
-	auto rot = vehState->GetTransform().rotation;
 	float heading = -rot.yaw;
 	if (heading < -180)
 		heading = heading + 360;
@@ -234,6 +256,7 @@ void MessageManager::pack_navinfo(const csd::GnssMeasurement &gnssMsg)
 	NAVINFO.angle_roll = rot.roll;
 	auto rot_vel = vehState->GetAngularVelocity();
 	NAVINFO.angular_vel_z = deg2rad(-rot_vel.z);
+
 	// speed, velocity, acceleration
 	// TODO:rear axle to front axle
 	auto vel = vehState->GetVelocity();
@@ -242,6 +265,7 @@ void MessageManager::pack_navinfo(const csd::GnssMeasurement &gnssMsg)
 	NAVINFO.velocity_north = -vel.y; // East-South-Up coordinate in Carla.
 	NAVINFO.acceleration_x = CANINFO.acceleration_x;
 	NAVINFO.acceleration_y = CANINFO.acceleration_y;
+
 	//status
 	NAVINFO.curvature = 0;
 	NAVINFO.HPOS_accuracy = 0.01;
@@ -274,7 +298,8 @@ PredictedObject MessageManager::pack_one_object(cc::ActorPtr pActor)
 
 	auto rotEgo = vehState->GetTransform().rotation;
 	auto rot = pActor->GetTransform().rotation;
-	float heading = 90 + rotEgo.yaw - rot.yaw;
+	// float heading = 90 + rotEgo.yaw - rot.yaw; // relative
+	float heading = -rot.yaw; // absolute
 	if (heading < -180)
 		heading = heading + 360;
 	else if (heading > 180)
@@ -291,8 +316,6 @@ PredictedObject MessageManager::pack_one_object(cc::ActorPtr pActor)
 		double t = TIMESTEP_OBJECTLIST_PREDICT;
 		locPred.x = loc.x + i * t * vel.x + 0.5 * pow(i * t, 2) * pActor->GetAcceleration().x;
 		locPred.y = loc.y + i * t * vel.y + 0.5 * pow(i * t, 2) * pActor->GetAcceleration().y;
-		//printf("locEgo (%4f, %4f, %4f)\n", locEgo.x, locEgo.y, locEgo.z);
-		//printf("locPred (%4f, %4f, %4f\n", locPred.x, locPred.y, locPred.z);
 		cg::Location locVehframe;
 		unreal2vehframe(locEgo, locPred, rotEgo.yaw, locVehframe);
 		predObj.trajectory_point[0][i] = locVehframe.x;
@@ -323,9 +346,9 @@ PredictedObject MessageManager::pack_one_object(cc::ActorPtr pActor)
 	}
 	for (int i = 0; i < 4; ++i)
 	{
-		if (vertexs[i].x <= predObj.trajectory_point[0][0])
+		if (vertexs[i].y >= predObj.trajectory_point[1][0])
 		{
-			if (vertexs[i].y <= predObj.trajectory_point[1][0])
+			if (vertexs[i].x <= predObj.trajectory_point[0][0])
 			{
 				// left-bottom vertex
 				predObj.bounding_box[0][1] = vertexs[i].x;
@@ -340,7 +363,7 @@ PredictedObject MessageManager::pack_one_object(cc::ActorPtr pActor)
 		}
 		else
 		{
-			if (vertexs[i].y <= predObj.trajectory_point[1][0])
+			if (vertexs[i].x <= predObj.trajectory_point[0][0])
 			{
 				// right-bottom vertex
 				predObj.bounding_box[0][3] = vertexs[i].x;
@@ -354,48 +377,39 @@ PredictedObject MessageManager::pack_one_object(cc::ActorPtr pActor)
 			}
 		}
 	}
-
 	return predObj;
 };
 
 void MessageManager::pack_objectlist(const cc::ActorList &actors)
 {
 	_mutex.lock();
-	//printf("start packing objectlist\n");
 	OBJECTLIST.time_stamp = NAVINFO.timestamp;
 	OBJECTLIST.data_source = 1;
 	OBJECTLIST.object_count = 0;
 	OBJECTLIST.predicted_object.clear();
-	//printf("start packing every object\n");
 	for (auto actor : actors)
 	{
 		if (actor->GetId() == vehState->GetId())
 		{
-			//printf("self, pass\n");
 			continue;
 		}
 		// if (start_with(actor->GetTypeId(), "sensor") || start_with(actor->GetTypeId(), "controller"))
 		// {
-		// 	printf("sensor or controller actor, pass\n");
 		// 	continue;
 		// }
 		// if (start_with(actor->GetTypeId(), "traffic") || start_with(actor->GetTypeId(), "static"))
 		// {
-		// 	printf("traffic or static actor, pass\n");
 		// 	continue;
 		// }
 		if (!(start_with(actor->GetTypeId(), "vehicle") || start_with(actor->GetTypeId(), "walker")))
 		{
-			//printf("not a vehicle or walker, pass\n");
 			continue;
 		}
 		if (!in_vehframe_test(*vehState.get(), actor))
 		{
-			//printf("not in vehframe, pass\n");
 			continue;
 		}
 
-		//printf("start pack object: %s\n", actor->GetDisplayId().c_str());
 		auto obj = pack_one_object(actor);
 		OBJECTLIST.predicted_object.push_back(obj);
 		++OBJECTLIST.object_count;
@@ -425,76 +439,57 @@ void MessageManager::pack_fusionmap_raster()
 	{
 		auto box = obj.bounding_box;
 		// calculate rasterize zoom
-		float left = box[0][0] < box[1][0] ? box[0][0] : box[1][0];
-		float right = box[2][0] > box[3][0] ? box[2][0] : box[3][0];
-		float bottom = box[1][1] < box[3][1] ? box[1][1] : box[3][1];
-		float top = box[0][1] > box[2][1] ? box[0][1] : box[2][1];
-		int16_t leftCell = floor(left / FUSIONMAP.map_resolution) + FUSIONMAP.car_center_column;
-		int16_t rightCell = ceil(right / FUSIONMAP.map_resolution) + FUSIONMAP.car_center_column;
+		float left = box[1][0] > box[1][1] ? box[1][0] : box[1][1];
+		float right = box[1][2] < box[1][3] ? box[1][2] : box[1][3];
+		float bottom = box[0][1] < box[0][3] ? box[0][1] : box[0][3];
+		float top = box[0][0] > box[0][2] ? box[0][0] : box[0][2];
+		int16_t leftCell = -ceil(left / FUSIONMAP.map_resolution) + FUSIONMAP.car_center_column;
+		int16_t rightCell = -floor(right / FUSIONMAP.map_resolution) + FUSIONMAP.car_center_column;
 		int16_t bottomCell = FUSIONMAP.car_center_row - floor(bottom / FUSIONMAP.map_resolution);
 		int16_t topCell = FUSIONMAP.car_center_row - ceil(top / FUSIONMAP.map_resolution);
-		int16_t xmin = leftCell > -1 ? leftCell : 0;
-		int16_t xmax = rightCell < FUSIONMAP.map_column_num ? rightCell : (FUSIONMAP.map_column_num - 1);
-		int16_t ymin = topCell > -1 ? topCell : 0;
-		int16_t ymax = bottomCell < FUSIONMAP.map_row_num ? bottomCell : (FUSIONMAP.map_row_num - 1);
+		// front x, right y
+		int16_t ymin = leftCell > -1 ? leftCell : 0;
+		int16_t ymax = rightCell < FUSIONMAP.map_column_num ? rightCell : (FUSIONMAP.map_column_num - 1);
+		int16_t xmin = topCell > -1 ? topCell : 0;
+		int16_t xmax = bottomCell < FUSIONMAP.map_row_num ? bottomCell : (FUSIONMAP.map_row_num - 1);
 
 		// rasterize obstacles into map cells
 		int16_t x = xmin;
 		int16_t y = ymin;
+
+		int rastered_point_num = 0;
 
 		while (x <= xmax)
 		{
 			y = ymin;
 			while (y <= ymax)
 			{
-				double posX = (x - FUSIONMAP.car_center_column) * FUSIONMAP.map_resolution;
-				double posY = (FUSIONMAP.car_center_row - y) * FUSIONMAP.map_resolution;
+				double posY = -(y - FUSIONMAP.car_center_column) * FUSIONMAP.map_resolution;
+				double posX = (FUSIONMAP.car_center_row - x) * FUSIONMAP.map_resolution;
 				bool isOccupied = in_area_test(posX, posY, obj);
 				if (isOccupied)
 				{
 					// bit-0 history obstacle, bit-1 lidar obstacle, bit-2 moving obstacle
-					bool isHistory = false;
-					bool isMoving = (obj.velocity == 0);
+					FUSIONMAP.map_cells[x][y] |= 0b00000010;
+					++rastered_point_num;
+					bool isHistory = true;
+					bool isMoving = (fabs(obj.velocity) > 100);
 					if (isHistory)
-						FUSIONMAP.map_cells[y][x] |= 0b00000001;
+						FUSIONMAP.map_cells[x][y] |= 0b00000001;
 					if (isMoving)
-						FUSIONMAP.map_cells[y][x] |= 0b00000100;
-					FUSIONMAP.map_cells[y][x] |= 0b00000010;
+						FUSIONMAP.map_cells[x][y] |= 0b00000100;
 				}
 				++y;
 			}
 			++x;
 		}
+		//printf("rastered points count: %d\n", rastered_point_num);
 	}
-
 	_mutex.unlock();
 };
 
 void MessageManager::pack_fusionmap_lidar(const csd::LidarMeasurement &lidarMsg)
 {
 	_mutex.lock();
-
-	MAP_HISTORY_CELLS = FUSIONMAP.map_cells;
-	FUSIONMAP.map_cells.assign(MAP_ROW_NUM, MAP_ROW_0);
-
-	FUSIONMAP.time_stamp = lidarMsg.GetTimestamp() * 1000;
-	FUSIONMAP.car_utm_position_x = NAVINFO.utm_x;
-	FUSIONMAP.car_utm_position_y = NAVINFO.utm_y;
-	FUSIONMAP.car_heading = NAVINFO.angle_head;
-	FUSIONMAP.map_resolution = FUSIONMAP_RESOLUTION;
-	FUSIONMAP.map_row_num = MAP_ROW_NUM;
-	FUSIONMAP.map_column_num = MAP_COLUMN_NUM;
-	FUSIONMAP.car_center_column = MAP_CENTER_COLUMN;
-	FUSIONMAP.car_center_row = MAP_CENTER_ROW;
-
-	int pnum = lidarMsg.size();
-	Eigen::Matrix3Xf pcd(pnum);
-	for (size_t i = 0; i < pnum; ++i)
-	{
-		auto p = lidarMsg[i];
-		pcd(0, i) = p.x;
-		pcd(1, i) = p.y;
-		pcd(2, i) = p.z;
-	}
 	_mutex.unlock();
 }

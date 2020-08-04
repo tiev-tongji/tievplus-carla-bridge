@@ -22,10 +22,10 @@ void PIDController::pull_parameters(const std::string &filename)
 	FILE *fp = fopen(filename.c_str(), "r");
 	if (fp == 0)
 	{
-		printf("cannot open pid_parameters.json.\n");
+		printf("[Error] cannot open pid_parameters.json.\n");
 		return;
 	}
-	printf("controller use pid_parameters.json.\n");
+	printf("[INFO] controller use pid_parameters.json.\n");
 	char readBuffer[1024];
 	rapidjson::FileReadStream is(fp, readBuffer, sizeof(readBuffer));
 	rapidjson::Document d;
@@ -99,7 +99,7 @@ void PIDController::lateral_control(double aim_steer, double veh_steer, bool dir
 	if (direct_steer)
 	{
 		control.steer = _para_steer.kp * aim_steer;
-		control.steer = control.steer > _para_limits.min_steer ? control.steer : 0;
+		control.steer = fabs(control.steer) > _para_limits.min_steer ? control.steer : 0;
 		if (fabs(control.steer) > _para_limits.max_steer)
 		{
 			control.steer = control.steer > 0 ? _para_limits.max_steer : -_para_limits.max_steer;

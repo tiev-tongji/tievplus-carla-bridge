@@ -11,6 +11,7 @@ ZeroCM Message Manager
 #include <mutex>
 #include <condition_variable>
 #include <chrono>
+#include <cmath>
 
 #define USE_LCM
 
@@ -72,8 +73,8 @@ using std::vector;
 
 const static double PI = 3.14159265358979323846;
 // OBJECTLIST parameters
-const static size_t POINTS_NUM_OBJECTLIST_PREDICT = 5; // including current point
-const static double TIMESTEP_OBJECTLIST_PREDICT = 1;   // unit: second
+const static size_t POINTS_NUM_OBJECTLIST_PREDICT = 10; // including current point
+const static double TIMESTEP_OBJECTLIST_PREDICT = 0.5;	// unit: second
 // tiev-plus vehicle parameters
 const static double MAX_STEERINGWHEEL = 500;
 // FUSIONMAP parameters
@@ -83,6 +84,7 @@ const static int16_t MAP_COLUMN_NUM = 401;
 const static int16_t MAP_CENTER_ROW = 850;
 const static int16_t MAP_CENTER_COLUMN = 200;
 const static vector<uint8_t> MAP_ROW_0(MAP_COLUMN_NUM);
+const static double LIDAR_ROTATE_FREQUENCY = 20;
 
 inline double norm2(double x, double y, double z = 0) { return sqrt(x * x + y * y + z * z); }
 inline double rad2deg(double rad) { return rad / PI * 180.0; }
@@ -131,16 +133,20 @@ inline bool in_area_test(double x, double y, const PredictedObject &obj)
 	double z1 = (obj.bounding_box[0][1] - obj.bounding_box[0][0]) * (y - obj.bounding_box[1][0]) -
 				(obj.bounding_box[1][1] - obj.bounding_box[1][0]) * (x - obj.bounding_box[0][0]);
 	bool isNeg = z1 < 0;
+	//printf("z1: %f\n", z1);
 	double z2 = (obj.bounding_box[0][3] - obj.bounding_box[0][1]) * (y - obj.bounding_box[1][1]) -
 				(obj.bounding_box[1][3] - obj.bounding_box[1][1]) * (x - obj.bounding_box[0][1]);
+	//printf("z2: %f\n", z2);
 	if ((isNeg && z2 >= 0) || (!isNeg && z2 < 0))
 		return false; // once result's symbol is different from previous ones, return false.
 	double z3 = (obj.bounding_box[0][2] - obj.bounding_box[0][3]) * (y - obj.bounding_box[1][3]) -
 				(obj.bounding_box[1][2] - obj.bounding_box[1][3]) * (x - obj.bounding_box[0][3]);
+	//printf("z3: %f\n", z3);
 	if ((isNeg && z3 >= 0) || (!isNeg && z3 < 0))
 		return false;
 	double z4 = (obj.bounding_box[0][0] - obj.bounding_box[0][2]) * (y - obj.bounding_box[1][2]) -
-				(obj.bounding_box[1][0] - obj.bounding_box[1][2]) * (x - obj.bounding_box[1][2]);
+				(obj.bounding_box[1][0] - obj.bounding_box[1][2]) * (x - obj.bounding_box[0][2]);
+	//printf("z4: %f\n", z4);
 	if ((isNeg && z4 >= 0) || (!isNeg && z4 < 0))
 		return false;
 	return true;
@@ -149,13 +155,13 @@ inline bool in_area_test(double x, double y, const PredictedObject &obj)
 class MessageManager
 {
 public:
-	friend class cc::Actor::ActorState;
-	MessageManager(std::string url) : TUNNEL(url), _need_stop(false){};
+	MessageManager(std::string url) : TUNNEL(url), _need_stop(false) { CONTROL.car_gear_command = 1; };
 	MessageManager() : _need_stop(false){};
 	MessageManager(MessageManager const &) = delete;
 	MessageManager &operator=(MessageManager const &) = delete;
 	~MessageManager()
 	{
+		_mutex.unlock();
 		_need_stop = true;
 		for (auto &t : _pub_threads)
 		{
@@ -168,6 +174,9 @@ public:
 			if (t.joinable())
 				t.join();
 		}
+#endif
+#ifdef USE_ZCM
+		TUNNEL.stop();
 #endif
 	};
 
@@ -192,7 +201,7 @@ public:
 						   int freq_objectlist = 60, int freq_lanes = 60);
 	void subscribe_all();
 
-	void pack_caninfo(const csd::IMUMeasurement &imuMsg);
+	void pack_caninfo();
 	void pack_navinfo(const csd::GnssMeasurement &gnssMsg);
 	void pack_objectlist(const cc::ActorList &actors);
 	void pack_fusionmap_lidar(const csd::LidarMeasurement &lidarMsg);
@@ -223,9 +232,11 @@ public:
 	GeographicLib::GeoCoords coord;
 	vector<vector<uint8_t>> MAP_HISTORY_CELLS; // to cache fusionmap cells of the previous frame.
 	SharedPtr<cc::Vehicle> vehState;		   // to cache ego car's state from carla, designed for sensor callback in carla.
+	vector<vector<float>> pcdRawData;
 
 private:
-	std::vector<std::thread> _pub_threads;
+	std::vector<std::thread>
+		_pub_threads;
 #ifdef USE_LCM
 	std::vector<std::thread> _sub_threads;
 #endif
