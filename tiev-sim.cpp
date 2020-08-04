@@ -4,12 +4,12 @@
 #include "PIDController.h"
 #include <csignal>
 
-//#define ASYNC_MODE
-#define SYNC_MODE
+#define ASYNC_MODE
+//#define SYNC_MODE
 //#define OPT_TIME_TEST
 
-//#define HIL_MODE
-#define AUTOPILOT_MODE
+#define HIL_MODE
+//#define AUTOPILOT_MODE
 
 static const string HOST = "127.0.0.1"; // sercer host.
 static const uint16_t PORT = 2000;      // server post.
@@ -90,14 +90,14 @@ public:
     {
         bpLib = carlaWorld.GetBlueprintLibrary();
         map = carlaWorld.GetMap();
-        // for (auto bp : *bpLib)
-        // {
-        //     std::cout << "blueprint ID: " << bp.GetId() << std::endl;
-        //     for (auto it = bp.begin(); it != bp.end(); ++it)
-        //     {
-        //         std::cout << "-----[attribute] " << it->GetId() << std::endl;
-        //     }
-        // }
+        for (auto bp : *bpLib)
+        {
+            std::cout << "blueprint ID: " << bp.GetId() << std::endl;
+            for (auto it = bp.begin(); it != bp.end(); ++it)
+            {
+                std::cout << "-----[attribute] " << it->GetId() << std::endl;
+            }
+        }
     }
 
     void initMessager()
@@ -178,31 +178,29 @@ public:
         relocateSpectator2egoCar(); // warning: this method spends a lot of time.
 
 #ifdef HIL_MODE
-        // double aimAcc = msgManager.CONTROL.longitudinal_acceleration_command;
-        // double vehAcc = msgManager.CANINFO.acceleration_x;
-        // double aimSteer = -msgManager.CONTROL.steer_wheel_angle_command;
-        // double vehSteer = -msgManager.CANINFO.steer_wheel_angle;
-        // pidController.tick(aimAcc, aimSteer, vehAcc, vehSteer, true);
-        // control.brake = pidController.control.brake;
-        // control.throttle = pidController.control.throttle;
-        // control.steer = pidController.control.steer;
+        double aimAcc = msgManager.CONTROL.longitudinal_acceleration_command;
+        double vehAcc = msgManager.CANINFO.acceleration_x;
+        double aimSteer = -msgManager.CONTROL.steer_wheel_angle_command;
+        double vehSteer = -msgManager.CANINFO.steer_wheel_angle;
+        pidController.tick(aimAcc, aimSteer, vehAcc, vehSteer, true);
+        control.brake = pidController.control.brake;
+        control.throttle = pidController.control.throttle;
+        control.steer = pidController.control.steer;
 
-        //msgManager.CONTROL.longitudinal_acceleration_command = 2.5;
-        //msgManager.CONTROL.steer_wheel_angle_command = 0;
-        if (msgManager.CONTROL.longitudinal_acceleration_command > 0)
-        {
-            control.throttle = msgManager.CONTROL.longitudinal_acceleration_command / 5;
-            control.brake = 0;
-        }
-        else
-        {
-            control.throttle = 0;
-            control.brake = -msgManager.CONTROL.longitudinal_acceleration_command / 5;
-        }
-        control.steer = -msgManager.CONTROL.steer_wheel_angle_command / 500;
+        // if (msgManager.CONTROL.longitudinal_acceleration_command > 0)
+        // {
+        //     control.throttle = msgManager.CONTROL.longitudinal_acceleration_command / 5;
+        //     control.brake = 0;
+        // }
+        // else
+        // {
+        //     control.throttle = 0;
+        //     control.brake = -msgManager.CONTROL.longitudinal_acceleration_command / 5;
+        // }
+        // control.steer = -msgManager.CONTROL.steer_wheel_angle_command / 500;
+
         control.reverse = msgManager.CONTROL.car_gear_command == 2;
         control.hand_brake = msgManager.CONTROL.car_gear_command == 1;
-        std::cout << player->GetPhysicsControl().GetForwardGears()[control.gear].ratio << std::endl;
         player->ApplyControl(control);
 #endif
 
@@ -286,12 +284,17 @@ void gameLoop(int16_t freq)
 
     // spawn actors
     auto egoInitTransform = RandomChoice(world.map->GetRecommendedSpawnPoints(), rng);
-    double spawnX = 427014.0254 - 426858.836012; // UTM to UE4 coord, to find specific spawn point
-    double spawnY = 5427935.493100 - 5427742.755;
+    //double spawnX = 427014.0254 - 426858.836012; // straight  UTM to UE4 coord, to find specific spawn point
+    //double spawnY = 5427935.493100 - 5427742.755;
+    double spawnX = 426932.0808 - 426858.836012; //uturn
+    double spawnY = 5427935.493100 - 5427740.02;
+    //double spawnX = 426782.0779 - 426858.836012; //square
+    //double spawnY = 5427935.493100 - 5427818.3064;
     egoInitTransform.location.x = spawnX;
     egoInitTransform.location.y = spawnY;
     egoInitTransform.location.z = 3;
-    egoInitTransform.rotation.yaw = -180;
+    egoInitTransform.rotation.yaw = -180; //straight & uturn
+    //egoInitTransform.rotation.yaw = -90; //square
     //auto bpPlayer = RandomChoice(*vehicleBp, rng);
     auto bpPlayer = *world.bpLib->Find("vehicle.tesla.model3");
     auto vehEgo = world.carlaWorld.TrySpawnActor(bpPlayer, egoInitTransform);
@@ -310,9 +313,9 @@ void gameLoop(int16_t freq)
     massCenter.y = 0;
     //massCenter.z = -0.526; // TODO: not sure center of mass in carla refers to ground plane or rear axle
     egoPhysics.wheels[0].radius = 33;
-    egoPhysics.wheels[0].max_steer_angle = 74;
+    egoPhysics.wheels[0].max_steer_angle = 54;
     egoPhysics.wheels[1].radius = 33;
-    egoPhysics.wheels[1].max_steer_angle = 74;
+    egoPhysics.wheels[1].max_steer_angle = 54;
     egoPhysics.wheels[2].radius = 33;
     egoPhysics.wheels[3].radius = 33;
     player->ApplyPhysicsControl(egoPhysics);
@@ -327,6 +330,20 @@ void gameLoop(int16_t freq)
     std::cout << "[INFO] Spawned npc     " << target->GetDisplayId() << '\n';
     auto vehTarget = static_pointer_cast<cc::Vehicle>(target);
     world.npcList.push_back(vehTarget);
+    vehTarget->SetVelocity(vec);
+    auto targetInitControl = vehTarget->GetControl();
+    targetInitControl.hand_brake = true;
+    vehTarget->ApplyControl(targetInitControl);
+
+    auto propTransform = RandomChoice(world.map->GetRecommendedSpawnPoints(), rng);
+    propTransform.location.x = spawnX - 10;
+    propTransform.location.y = spawnY;
+    propTransform.location.z = 3;
+    auto propBpLib = world.bpLib->Filter("static.prop.constructioncone");
+    auto bpProp = RandomChoice(*propBpLib, rng);
+    auto prop = world.carlaWorld.TrySpawnActor(bpProp, propTransform);
+    std::cout << "[INFO] Spawned prop     " << prop->GetDisplayId() << '\n';
+    prop->SetSimulatePhysics(true);
 
     auto gnssTransform = makeTransform(0, 0, 3, 0, 0, 0);
     auto gnssBp = world.bpLib->Find("sensor.other.gnss");

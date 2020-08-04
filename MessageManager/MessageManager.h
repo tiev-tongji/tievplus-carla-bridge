@@ -155,7 +155,7 @@ inline bool in_area_test(double x, double y, const PredictedObject &obj)
 class MessageManager
 {
 public:
-	MessageManager(std::string url) : TUNNEL(url), _need_stop(false){};
+	MessageManager(std::string url) : TUNNEL(url), _need_stop(false) { CONTROL.car_gear_command = 1; };
 	MessageManager() : _need_stop(false){};
 	MessageManager(MessageManager const &) = delete;
 	MessageManager &operator=(MessageManager const &) = delete;
