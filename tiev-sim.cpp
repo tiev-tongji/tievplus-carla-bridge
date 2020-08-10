@@ -94,10 +94,8 @@ public:
         }
     };
 
-    void setup()
+    void printBlueprintLib()
     {
-        bpLib = carlaWorld.GetBlueprintLibrary();
-        map = carlaWorld.GetMap();
         for (auto bp : *bpLib)
         {
             std::cout << "blueprint ID: " << bp.GetId() << std::endl;
@@ -106,6 +104,12 @@ public:
                 std::cout << "-----[attribute] " << it->GetId() << std::endl;
             }
         }
+    }
+
+    void setup()
+    {
+        bpLib = carlaWorld.GetBlueprintLibrary();
+        map = carlaWorld.GetMap();
     }
 
     void initMessager()
@@ -182,7 +186,6 @@ public:
 
     void tick()
     {
-        //carlaWorld.WaitForTick(1s);
         relocateSpectator2egoCar(); // warning: this method spends a lot of time.
 
 #ifdef HIL_MODE
@@ -194,18 +197,6 @@ public:
         control.brake = pidController.control.brake;
         control.throttle = pidController.control.throttle;
         control.steer = pidController.control.steer;
-
-        // if (msgManager.CONTROL.longitudinal_acceleration_command > 0)
-        // {
-        //     control.throttle = msgManager.CONTROL.longitudinal_acceleration_command / 5;
-        //     control.brake = 0;
-        // }
-        // else
-        // {
-        //     control.throttle = 0;
-        //     control.brake = -msgManager.CONTROL.longitudinal_acceleration_command / 5;
-        // }
-        // control.steer = -msgManager.CONTROL.steer_wheel_angle_command / 500;
 
         control.reverse = msgManager.CONTROL.car_gear_command == 2;
         control.hand_brake = msgManager.CONTROL.car_gear_command == 1;
