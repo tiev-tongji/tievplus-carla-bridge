@@ -8,8 +8,8 @@
 //#define SYNC_MODE
 //#define OPT_TIME_TEST
 
-#define HIL_MODE
-//#define AUTOPILOT_MODE
+//#define HIL_MODE
+#define AUTOPILOT_MODE
 
 static const string HOST = "127.0.0.1"; // sercer host.
 static const uint16_t PORT = 2000;      // server post.
@@ -74,6 +74,14 @@ public:
             {
                 std::cout << "[INFO] Destroying npc    " << npc->GetDisplayId() << std::endl;
                 npc->Destroy();
+            }
+        }
+        for (auto prop : propList)
+        {
+            if (prop->IsAlive())
+            {
+                std::cout << "[INFO] Destroying prop   " << prop->GetDisplayId() << std::endl;
+                prop->Destroy();
             }
         }
         if (player.get() != nullptr)
@@ -262,6 +270,7 @@ public:
     SharedPtr<cc::Actor> spectator;
     vector<SharedPtr<cc::Sensor>> sensorList;
     vector<SharedPtr<cc::Vehicle>> npcList;
+    vector<SharedPtr<cc::Actor>> propList;
 
     cc::Vehicle::Control control;
     MessageManager msgManager;
@@ -344,6 +353,7 @@ void gameLoop(int16_t freq)
     auto prop = world.carlaWorld.TrySpawnActor(bpProp, propTransform);
     std::cout << "[INFO] Spawned prop     " << prop->GetDisplayId() << '\n';
     prop->SetSimulatePhysics(true);
+    world.propList.push_back(prop);
 
     auto gnssTransform = makeTransform(0, 0, 3, 0, 0, 0);
     auto gnssBp = world.bpLib->Find("sensor.other.gnss");
