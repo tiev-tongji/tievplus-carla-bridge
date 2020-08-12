@@ -4,8 +4,8 @@
 #include "PIDController.h"
 #include <csignal>
 
-#define ASYNC_MODE
-//#define SYNC_MODE
+//#define ASYNC_MODE
+#define SYNC_MODE
 //#define OPT_TIME_TEST
 
 //#define HIL_MODE
@@ -16,7 +16,7 @@ static const uint16_t PORT = 2000;      // server post.
 static const size_t WORKER_THREADS = 0ULL;
 static const string ZCM_URL = "udpm://239.255.76.67:7667?ttl=1";
 static const string PID_PARAMETER_FILEPATH = "../cfg/pid_parameters.json";
-static const string TOWN_NAME = "Town03";
+static const string TOWN_NAME = "Town06";
 static std::mt19937_64 rng((std::random_device())());
 static volatile bool keyboardIrruption = false;
 
@@ -106,6 +106,16 @@ public:
         }
     }
 
+    void printLandmarks()
+    {
+        auto landmarks = map->GetAllLandmarks();
+        std::cout << "-------------" << landmarks.size() << " Landmarks in Map---------------" << std::endl;
+        for (auto lm : landmarks)
+        {
+            std::cout << ">>name: " << lm->GetName() << " type: " << lm->GetType() << std::endl;
+        }
+    }
+
     void setup()
     {
         bpLib = carlaWorld.GetBlueprintLibrary();
@@ -186,7 +196,8 @@ public:
 
     void tick()
     {
-        relocateSpectator2egoCar(); // warning: this method spends a lot of time.
+        carlaWorld.WaitForTick(1s);
+        relocateSpectator2egoCar();
 
 #ifdef HIL_MODE
         double aimAcc = msgManager.CONTROL.longitudinal_acceleration_command;
@@ -206,6 +217,7 @@ public:
         msgManager.pack_caninfo();
         msgManager.pack_objectlist(*carlaWorld.GetActors());
         msgManager.pack_fusionmap_raster();
+        msgManager.pack_roadmark(map->GetWaypoint(player->GetLocation()), carlaWorld);
 
 #ifdef SYNC_MODE
         msgManager.publish_all();
@@ -342,7 +354,7 @@ void gameLoop(int16_t freq)
     auto propBpLib = world.bpLib->Filter("static.prop.constructioncone");
     auto bpProp = RandomChoice(*propBpLib, rng);
     auto prop = world.carlaWorld.TrySpawnActor(bpProp, propTransform);
-    std::cout << "[INFO] Spawned prop     " << prop->GetDisplayId() << '\n';
+    std::cout << "[INFO] Spawned prop    " << prop->GetDisplayId() << '\n';
     prop->SetSimulatePhysics(true);
     world.propList.push_back(prop);
 

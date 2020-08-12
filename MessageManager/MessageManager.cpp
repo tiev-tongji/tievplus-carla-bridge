@@ -80,12 +80,24 @@ void MessageManager::publish_objectlist()
 	TUNNEL.publish("PREDICTEDOBJECT", &OBJECTLIST);
 }
 
+void MessageManager::publish_roadmarking()
+{
+	TUNNEL.publish("ROADMARKINGLIST", &ROADMARKING);
+}
+
+void MessageManager::publish_trafficlight()
+{
+	TUNNEL.publish("TRAFFICLIGHTSIGNAL", &TRAFFICLIGHT);
+}
+
 void MessageManager::publish_all()
 {
 	publish_caninfo();
 	publish_navinfo();
 	publish_fusionmap();
 	publish_objectlist();
+	publish_roadmarking();
+	publish_trafficlight();
 }
 
 void MessageManager::pub_caninfo_loop(int freq)
@@ -140,13 +152,41 @@ void MessageManager::pub_objectlist_loop(int freq)
 	}
 }
 
+void MessageManager::pub_roadmarking_loop(int freq)
+{
+	while (!_need_stop)
+	{
+		auto time_point = std::chrono::steady_clock::now() + std::chrono::milliseconds(1000 / freq);
+		_mutex.lock();
+		TUNNEL.publish("ROADMARKINGLIST", &ROADMARKING);
+		//print("async mode: publish ROADMARKINGLIST");
+		_mutex.unlock();
+		std::this_thread::sleep_until(time_point);
+	}
+}
+
+void MessageManager::pub_trafficlight_loop(int freq)
+{
+	while (!_need_stop)
+	{
+		auto time_point = std::chrono::steady_clock::now() + std::chrono::milliseconds(1000 / freq);
+		_mutex.lock();
+		TUNNEL.publish("TRAFFICLIGHTSIGNAL", &TRAFFICLIGHT);
+		//print("async mode: publish TRAFFICLIGHTSIGNAL");
+		_mutex.unlock();
+		std::this_thread::sleep_until(time_point);
+	}
+}
+
 void MessageManager::publish_all_async(int freq_caninfo, int freq_navinfo, int freq_fusionmap,
-									   int freq_objectlist, int freq_lanes)
+									   int freq_objectlist, int freq_roadmarking, int freq_trafficlight)
 {
 	_pub_threads.push_back(std::thread(&MessageManager::pub_caninfo_loop, this, freq_caninfo));
 	_pub_threads.push_back(std::thread(&MessageManager::pub_navinfo_loop, this, freq_navinfo));
 	_pub_threads.push_back(std::thread(&MessageManager::pub_objectlist_loop, this, freq_objectlist));
 	_pub_threads.push_back(std::thread(&MessageManager::pub_fusionmap_loop, this, freq_fusionmap));
+	_pub_threads.push_back(std::thread(&MessageManager::pub_roadmarking_loop, this, freq_roadmarking));
+	_pub_threads.push_back(std::thread(&MessageManager::pub_trafficlight_loop, this, freq_trafficlight));
 
 	for (auto &t : _pub_threads)
 	{
@@ -220,20 +260,20 @@ void MessageManager::pack_navinfo(const csd::GnssMeasurement &gnssMsg)
 	auto rot = vehState->GetTransform().rotation;
 
 	// position
-	// GeographicLib::GeoCoords coord("121:12:44E 31:16:54N"); // geographic reference point relocated to tongji
-	// NAVINFO.utm_x = coord.Easting() + loc.x;
-	// NAVINFO.utm_y = coord.Northing() - loc.y;
-	// coord.Reset(coord.Zone(), coord.Northp(), NAVINFO.utm_x, NAVINFO.utm_y);
-	// NAVINFO.latitude = coord.Latitude();
-	// NAVINFO.longitude = coord.Longitude();
-	// NAVINFO.altitude = gnssMsg.GetAltitude();
-
-	NAVINFO.latitude = gnssMsg.GetLatitude();
-	NAVINFO.longitude = gnssMsg.GetLongitude();
+	GeographicLib::GeoCoords coord("121:12:44E 31:16:54N"); // geographic reference point relocated to tongji
+	NAVINFO.utm_x = coord.Easting() + loc.x;
+	NAVINFO.utm_y = coord.Northing() - loc.y;
+	coord.Reset(coord.Zone(), coord.Northp(), NAVINFO.utm_x, NAVINFO.utm_y);
+	NAVINFO.latitude = coord.Latitude();
+	NAVINFO.longitude = coord.Longitude();
 	NAVINFO.altitude = gnssMsg.GetAltitude();
-	coord.Reset(NAVINFO.latitude, NAVINFO.longitude);
-	NAVINFO.utm_x = coord.Easting();
-	NAVINFO.utm_y = coord.Northing();
+
+	// NAVINFO.latitude = gnssMsg.GetLatitude();
+	// NAVINFO.longitude = gnssMsg.GetLongitude();
+	// NAVINFO.altitude = gnssMsg.GetAltitude();
+	// coord.Reset(NAVINFO.latitude, NAVINFO.longitude);
+	// NAVINFO.utm_x = coord.Easting();
+	// NAVINFO.utm_y = coord.Northing();
 
 	//printf("UE4 position: (%f, %f, %f, %f, %f, %f)\n", loc.x, loc.y, loc.z, rot.roll, rot.pitch, rot.yaw);
 	//printf("GPS: (%f, %f)\n", NAVINFO.latitude, NAVINFO.longitude);
@@ -544,4 +584,267 @@ void MessageManager::pack_fusionmap_lidar(const csd::LidarMeasurement &lidarMsg)
 	//std::cout << "time to pack lidar points: " << dr_ms_pack_fusionmap << std::endl;
 
 	_mutex.unlock();
+}
+
+void MessageManager::pack_roadmark(const SharedPtr<cc::Waypoint> current, cc::World &world)
+{
+	_mutex.lock();
+
+	typedef carla::road::Lane::LaneType LaneType;
+	typedef carla::road::element::LaneMarking::LaneChange LaneChange;
+	typedef carla::road::element::LaneMarking::Color LaneLineColor;
+	typedef carla::road::element::LaneMarking::Type LaneLineType;
+
+	auto debugHelper = world.MakeDebugHelper();
+
+	if (current->IsJunction())
+	{
+		_mutex.unlock();
+		return;
+	}
+
+	//std::cout << "-----------------------------------------------------------" << std::endl;
+	list<SharedPtr<cc::Waypoint>> slice;
+	slice.push_back(current);
+	bool hasLeft = true;
+	bool reverseL = false;
+	int numLeftLane = 0;
+	auto currentL = current;
+	while (hasLeft)
+	{
+		SharedPtr<cc::Waypoint> left;
+		if (!reverseL)
+			left = currentL->GetLeft();
+		else
+			left = currentL->GetRight();
+
+		if (!left.get())
+		{
+			//std::cout << "no left neigher\n";
+			hasLeft = false;
+		}
+		else if (!checkLaneType(left->GetType()))
+		{
+			//std::cout << "invalid lanetype\n";
+			hasLeft = false;
+		}
+		else if (left->GetLaneId() * current->GetLaneId() < 0)
+		{
+			//TODO: now only consider single direction of the road
+			//hasLeft = false;
+			slice.push_back(left);
+			++numLeftLane;
+			currentL = left;
+			reverseL = true;
+			//std::cout << "lane id: " << left->GetLaneId() << " lane type: " << laneType2string(left->GetType()) << std::endl;
+		}
+		else
+		{
+			slice.push_back(left);
+			++numLeftLane;
+			currentL = left;
+			//std::cout << "lane id: " << left->GetLaneId() << " lane type: " << laneType2string(left->GetType()) << std::endl;
+		}
+	}
+	bool hasRight = true;
+	bool reverseR = false;
+	int numRightLane = 0;
+	auto currentR = current;
+	while (hasRight)
+	{
+		SharedPtr<cc::Waypoint> right;
+		if (!reverseR)
+			right = currentR->GetRight();
+		else
+			right = currentR->GetLeft();
+
+		if (!right.get())
+		{
+			//std::cout << "no right neigher\n";
+			hasRight = false;
+		}
+		else if (!checkLaneType(right->GetType()))
+		{
+			//std::cout << "invalid lanetype\n";
+			hasRight = false;
+		}
+		else if (right->GetLaneId() * current->GetLaneId() < 0)
+		{
+			//TODO: now only consider single direction of the road
+			//hasRight = false;
+			slice.push_back(right);
+			++numLeftLane;
+			currentL = right;
+			reverseR = true;
+			//std::cout << "lane id: " << right->GetLaneId() << " lane type: " << laneType2string(right->GetType()) << std::endl;
+		}
+		else
+		{
+			slice.push_front(right);
+			++numRightLane;
+			currentR = right;
+			//std::cout << "lane id: " << right->GetLaneId() << " lane type: " << laneType2string(right->GetType()) << std::endl;
+		}
+	}
+	ROADMARKING.current_lane_id = numRightLane;
+	ROADMARKING.num = numRightLane + numLeftLane + 1;
+
+	for (auto wp : slice)
+	{
+		Lane lane;
+		lane.width = wp->GetLaneWidth();
+		switch (wp->GetLaneChange())
+		{
+		case LaneChange::None:
+			lane.lane_type = lane.kTypeStraight;
+			break;
+		case LaneChange::Both:
+			lane.lane_type = lane.kTypeLeftRight;
+			break;
+		case LaneChange::Left:
+			lane.lane_type = lane.kTypeStraightLeft;
+			break;
+		case LaneChange::Right:
+			lane.lane_type = lane.kTypeStraightRight;
+			break;
+		default:
+			lane.lane_type = lane.kTypeNone;
+			break;
+		}
+
+		LaneLine lineL;
+		lineL.distance = LINE_POINT_DISTANCE;
+		auto markingL = wp->GetLeftLaneMarking();
+		if (markingL->type == LaneLineType::Solid)
+		{
+			lineL.line_type = lineL.kTypeDividing;
+		}
+		else if (markingL->type == LaneLineType::SolidSolid)
+		{
+			lineL.line_type = lineL.kTypeTypeNoPass;
+		}
+		else if (markingL->type == LaneLineType::SolidBroken ||
+				 markingL->type == LaneLineType::BrokenSolid)
+		{
+			lineL.line_type = lineL.kTypeOneWayPass;
+		}
+		else if (markingL->type == LaneLineType::Broken ||
+				 markingL->type == LaneLineType::BrokenBroken)
+		{
+			lineL.line_type = lineL.kTypeGuiding;
+		}
+		else
+		{
+			// BottsDots, Grass, Curb, Other, None
+			lineL.line_type = lineL.kTypeTypeNoPass;
+		}
+
+		LaneLine lineR;
+		lineR.distance = LINE_POINT_DISTANCE;
+		auto markingR = wp->GetLeftLaneMarking();
+		if (markingR->type == LaneLineType::Solid)
+		{
+			lineR.line_type = lineR.kTypeDividing;
+		}
+		else if (markingR->type == LaneLineType::SolidSolid)
+		{
+			lineR.line_type = lineR.kTypeTypeNoPass;
+		}
+		else if (markingR->type == LaneLineType::SolidBroken ||
+				 markingR->type == LaneLineType::BrokenSolid)
+		{
+			lineR.line_type = lineR.kTypeOneWayPass;
+		}
+		else if (markingR->type == LaneLineType::Broken ||
+				 markingR->type == LaneLineType::BrokenBroken)
+		{
+			lineR.line_type = lineR.kTypeGuiding;
+		}
+		else
+		{
+			// BottsDots, Grass, Curb, Other, None
+			lineR.line_type = lineR.kTypeTypeNoPass;
+		}
+
+		vector<SharedPtr<cc::Waypoint>> waypoints;
+		for (size_t i = 0; i < LINE_POINTS_NUM + 1; ++i)
+		{
+			auto nexts = wp->GetNext(LINE_POINT_DISTANCE * (i + 1));
+			if (wp->GetLaneId() * current->GetLaneId() < 0)
+			{
+				nexts = wp->GetPrevious(LINE_POINT_DISTANCE * (i + 1));
+			}
+
+			if (!nexts.empty())
+			{
+				if (nexts[0]->IsJunction())
+				{
+					break;
+				}
+
+				waypoints.push_back(nexts[0]);
+				double width = waypoints[i]->GetLaneWidth();
+				float yaw = deg2rad(waypoints[i]->GetTransform().rotation.yaw);
+				auto loc = waypoints[i]->GetTransform().location;
+				float xl = loc.x + width / 2 * sin(yaw);
+				float yl = loc.y - width / 2 * cos(yaw);
+				float xr = loc.x - width / 2 * sin(yaw);
+				float yr = loc.y + width / 2 * cos(yaw);
+				debugHelper.DrawPoint(cg::Location{xl, yl, loc.z}, 0.05, cc::DebugHelper::Color{220, 90, 0}, 0.1, false);
+				debugHelper.DrawPoint(cg::Location{xr, yr, loc.z}, 0.05, cc::DebugHelper::Color{220, 90, 0}, 0.1, false);
+
+				cg::Location resl;
+				unreal2vehframe(vehState->GetLocation(), cg::Location(xl, yl, 0),
+								vehState->GetTransform().rotation.yaw, resl);
+				LinePoint pl;
+				pl.x = resl.x;
+				pl.y = resl.y;
+				lineL.points.push_back(pl);
+				cg::Location resr;
+				unreal2vehframe(vehState->GetLocation(), cg::Location(xr, yr, 0),
+								vehState->GetTransform().rotation.yaw, resr);
+				LinePoint pr;
+				pr.x = resr.x;
+				pr.y = resr.y;
+				lineR.points.push_back(pr);
+			}
+		}
+		lineL.num = waypoints.size();
+		lineR.num = waypoints.size();
+		lane.left_line = lineL;
+		lane.right_line = lineR;
+		ROADMARKING.lanes.push_back(lane);
+	}
+
+	ROADMARKING.stop_line.exist = 0;
+	ROADMARKING.stop_line.num = 1;
+	ROADMARKING.stop_line.stop_points.push_back(LinePoint{});
+	ROADMARKING.stop_line.distance = -1;
+
+	ROADMARKING.zebra.exist = 0;
+	ROADMARKING.zebra.num = 1;
+	ROADMARKING.zebra.zebra_points.push_back(LinePoint{});
+	ROADMARKING.zebra.distance = -1;
+
+	ROADMARKING.curb.exist = 0;
+	ROADMARKING.curb.num = 1;
+	ROADMARKING.curb.curb_points.push_back(LinePoint{});
+	ROADMARKING.curb.distance = -1;
+
+	ROADMARKING.no_parking.exist = 0;
+	ROADMARKING.no_parking.num = 1;
+	ROADMARKING.no_parking.no_parking_points.push_back(LinePoint{});
+	ROADMARKING.no_parking.distance = -1;
+
+	ROADMARKING.chevron.exist = 0;
+	ROADMARKING.chevron.num = 1;
+	ROADMARKING.chevron.chevron_points.push_back(LinePoint{});
+	ROADMARKING.chevron.distance = -1;
+
+	_mutex.unlock();
+}
+
+void MessageManager::pack_trafficlight()
+{
+	;
 }

@@ -7,6 +7,7 @@ ZeroCM Message Manager
 
 #include <vector>
 #include <string>
+#include <list>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
@@ -60,6 +61,7 @@ ZeroCM Message Manager
 #include "carla/sensor/data/IMUMeasurement.h"
 #include "carla/sensor/data/LidarMeasurement.h"
 #include "carla/sensor/data/Image.h"
+#include "carla/client/DebugHelper.h"
 
 namespace cc = carla::client;
 namespace cg = carla::geom;
@@ -68,6 +70,7 @@ namespace cs = carla::sensor;
 using boost::static_pointer_cast;
 using carla::SharedPtr;
 using namespace std::chrono_literals;
+using std::list;
 using std::string;
 using std::vector;
 
@@ -85,6 +88,9 @@ const static int16_t MAP_CENTER_ROW = 850;
 const static int16_t MAP_CENTER_COLUMN = 200;
 const static vector<uint8_t> MAP_ROW_0(MAP_COLUMN_NUM);
 const static double LIDAR_ROTATE_FREQUENCY = 20;
+// ROADMARKINGLIST parameters
+const static float LINE_POINT_DISTANCE = 1;
+const static size_t LINE_POINTS_NUM = 50;
 
 inline double norm2(double x, double y, double z = 0) { return sqrt(x * x + y * y + z * z); }
 inline double rad2deg(double rad) { return rad / PI * 180.0; }
@@ -151,6 +157,95 @@ inline bool in_area_test(double x, double y, const PredictedObject &obj)
 		return false;
 	return true;
 }
+inline bool checkLaneType(carla::road::Lane::LaneType type)
+{
+	typedef carla::road::Lane::LaneType LaneType;
+	switch (type)
+	{
+	case LaneType::Driving:
+		return true;
+		break;
+	case LaneType::Bidirectional:
+		return true;
+		break;
+	default:
+		return false;
+		break;
+	}
+}
+inline const string laneType2string(carla::road::Lane::LaneType type)
+{
+	typedef carla::road::Lane::LaneType LaneType;
+	switch (type)
+	{
+	case LaneType::None:
+		return "None";
+		break;
+	case LaneType::Driving:
+		return "Driving";
+		break;
+	case LaneType::Stop:
+		return "Stop";
+		break;
+	case LaneType::Shoulder:
+		return "Shoulder";
+		break;
+	case LaneType::Biking:
+		return "Biking";
+		break;
+	case LaneType::Sidewalk:
+		return "Sidewalk";
+		break;
+	case LaneType::Border:
+		return "Border";
+		break;
+	case LaneType::Restricted:
+		return "Restricted";
+		break;
+	case LaneType::Parking:
+		return "Parking";
+		break;
+	case LaneType::Bidirectional:
+		return "Bidirectional";
+		break;
+	case LaneType::Median:
+		return "Median";
+		break;
+	case LaneType::Special1:
+		return "Special1";
+		break;
+	case LaneType::Special2:
+		return "Special2";
+		break;
+	case LaneType::Special3:
+		return "Special3";
+		break;
+	case LaneType::RoadWorks:
+		return "Roadworks";
+		break;
+	case LaneType::Tram:
+		return "Tram";
+		break;
+	case LaneType::Rail:
+		return "Rail";
+		break;
+	case LaneType::Entry:
+		return "Entry";
+		break;
+	case LaneType::Exit:
+		return "Exit";
+		break;
+	case LaneType::OffRamp:
+		return "OffRamp";
+		break;
+	case LaneType::OnRamp:
+		return "OnRamp";
+		break;
+	case LaneType::Any:
+		return "Any";
+		break;
+	}
+}
 
 class MessageManager
 {
@@ -196,9 +291,11 @@ public:
 	void publish_navinfo();
 	void publish_fusionmap();
 	void publish_objectlist();
+	void publish_roadmarking();
+	void publish_trafficlight();
 	void publish_all();
-	void publish_all_async(int freq_caninfo = 150, int freq_navinfo = 150, int freq_fusionmap = 60,
-						   int freq_objectlist = 60, int freq_lanes = 60);
+	void publish_all_async(int freq_caninfo = 100, int freq_navinfo = 100, int freq_fusionmap = 50,
+						   int freq_objectlist = 50, int freq_roadmarking = 50, int freq_trafficlight = 50);
 	void subscribe_all();
 
 	void pack_caninfo();
@@ -206,6 +303,8 @@ public:
 	void pack_objectlist(const cc::ActorList &actors);
 	void pack_fusionmap_lidar(const csd::LidarMeasurement &lidarMsg);
 	void pack_fusionmap_raster();
+	void pack_roadmark(const SharedPtr<cc::Waypoint> current, cc::World &world);
+	void pack_trafficlight();
 
 	PredictedObject pack_one_object(cc::ActorPtr pActor);
 
@@ -214,21 +313,24 @@ private:
 	void pub_navinfo_loop(int freq);
 	void pub_fusionmap_loop(int freq);
 	void pub_objectlist_loop(int freq);
-	void sub_control_loop();
+	void pub_roadmarking_loop(int freq);
+	void pub_trafficlight_loop(int freq);
 
 public:
-// all ZCM messages were made public, in order to directly access them.
 #ifdef USE_ZCM
 	zcm::ZCM TUNNEL;
 #endif
 #ifdef USE_LCM
 	lcm::LCM TUNNEL;
 #endif
+
 	MsgChassisCommandSignal CONTROL;
 	MsgCanInfoSignal CANINFO;
 	MsgNavInfoSignal NAVINFO;
 	MsgFusionMap FUSIONMAP;
 	MsgPredictedObjectTrajectoryList OBJECTLIST;
+	MsgRoadMarkingList ROADMARKING;
+	MsgTrafficLightSignal TRAFFICLIGHT;
 	GeographicLib::GeoCoords coord;
 	vector<vector<uint8_t>> MAP_HISTORY_CELLS; // to cache fusionmap cells of the previous frame.
 	SharedPtr<cc::Vehicle> vehState;		   // to cache ego car's state from carla, designed for sensor callback in carla.
