@@ -4,8 +4,8 @@
 #include "PIDController.h"
 #include <csignal>
 
-//#define ASYNC_MODE
-#define SYNC_MODE
+#define ASYNC_MODE
+//#define SYNC_MODE
 //#define OPT_TIME_TEST
 
 //#define HIL_MODE
@@ -16,7 +16,7 @@ static const uint16_t PORT = 2000;      // server post.
 static const size_t WORKER_THREADS = 0ULL;
 static const string ZCM_URL = "udpm://239.255.76.67:7667?ttl=1";
 static const string PID_PARAMETER_FILEPATH = "../cfg/pid_parameters.json";
-static const string TOWN_NAME = "Town06";
+static const string TOWN_NAME = "Town05";
 static std::mt19937_64 rng((std::random_device())());
 static volatile bool keyboardIrruption = false;
 
@@ -44,6 +44,15 @@ inline cg::Transform makeTransform(double x, double y, double z, double pitch, d
     return trans;
 }
 
+inline cg::Transform makeTransformRelative(cg::Transform egoT, double xr, double yr, double zr)
+{
+    float yaw = deg2rad(egoT.rotation.yaw);
+    float x = egoT.location.x + cos(yaw) * xr + sin(yaw) * yr;
+    float y = egoT.location.y + sin(yaw) * xr - cos(yaw) * yr;
+    float z = egoT.location.z + zr;
+    return makeTransform(x, y, z, egoT.rotation.pitch, egoT.rotation.yaw, egoT.rotation.roll);
+}
+
 void sig_handler(int sig)
 {
     if (sig == SIGINT)
@@ -56,7 +65,8 @@ class MyWorld
 {
 public:
     MyWorld(cc::World &carlaWorld)
-        : carlaWorld(carlaWorld), msgManager(ZCM_URL), pidController(PID_PARAMETER_FILEPATH){};
+        : carlaWorld(carlaWorld), debugHelper(carlaWorld.MakeDebugHelper()),
+          msgManager(ZCM_URL), pidController(PID_PARAMETER_FILEPATH){};
     ~MyWorld()
     {
         for (auto s : sensorList)
@@ -128,7 +138,7 @@ public:
         msgManager.TUNNEL.subscribe("MsgChassisCommandSignal", &MessageManager::control_handler, &msgManager);
         msgManager.subscribe_all();
 #ifdef ASYNC_MODE
-        msgManager.publish_all_async(150, 150, 20, 20, 20);
+        msgManager.publish_all_async(100, 100, 20, 20, 20, 20);
 #endif
     }
 
@@ -171,6 +181,10 @@ public:
 
     void init()
     {
+        // auto worldSettings = carlaWorld.GetSettings();
+        // //worldSettings.synchronous_mode = true;
+        // worldSettings.fixed_delta_seconds = 0.02;
+        // carlaWorld.ApplySettings(worldSettings);
         spectator = carlaWorld.GetSpectator();
         initMessager();
         rigisterSensorCallback();
@@ -217,7 +231,7 @@ public:
         msgManager.pack_caninfo();
         msgManager.pack_objectlist(*carlaWorld.GetActors());
         msgManager.pack_fusionmap_raster();
-        msgManager.pack_roadmark(map->GetWaypoint(player->GetLocation()), carlaWorld);
+        msgManager.pack_roadmarking(map->GetWaypoint(player->GetLocation()), debugHelper, true);
 
 #ifdef SYNC_MODE
         msgManager.publish_all();
@@ -264,10 +278,147 @@ public:
 #endif
     }
 
+    SharedPtr<cc::Vehicle> spawnPlayer(const cg::Transform &transform, const string &blueprintName)
+    {
+
+        auto bpPlayer = *bpLib->Find(blueprintName);
+        auto vehEgo = carlaWorld.TrySpawnActor(bpPlayer, transform);
+        std::cout << "[INFO] Spawned player  " << vehEgo->GetDisplayId() << '\n';
+        player = static_pointer_cast<cc::Vehicle>(vehEgo);
+        cg::Vector3D vec(0, 0, 0);
+        player->SetVelocity(vec);
+        player->SetAngularVelocity(vec);
+        auto egoPhysics = player->GetPhysicsControl();
+        // std::cout << "wheel radius: " << egoPhysics.wheels[0].radius << std::endl;
+        // std::cout << "mass center: (x,y,z) = (" << egoPhysics.center_of_mass.x << ", "
+        //           << egoPhysics.center_of_mass.y << ", "
+        //           << egoPhysics.center_of_mass.z << std::endl;
+        // std::cout << "use auto gear-box: " << egoPhysics.use_gear_autobox << std::endl;
+        egoPhysics.mass = 1854;
+        auto massCenter = egoPhysics.center_of_mass;
+        massCenter.x = 1.436;
+        massCenter.y = 0;
+        massCenter.z = -0.526;
+        egoPhysics.wheels[0].radius = 33;
+        egoPhysics.wheels[0].max_steer_angle = 54;
+        egoPhysics.wheels[1].radius = 33;
+        egoPhysics.wheels[1].max_steer_angle = 54;
+        egoPhysics.wheels[2].radius = 33;
+        egoPhysics.wheels[3].radius = 33;
+        player->ApplyPhysicsControl(egoPhysics);
+        auto playerInitControl = player->GetControl();
+        playerInitControl.hand_brake = true;
+        player->ApplyControl(playerInitControl);
+        return player;
+    }
+
+    SharedPtr<cc::Vehicle> spawnNpc(const cg::Transform &transform, const string &blueprintName = "random")
+    {
+        SharedPtr<cc::BlueprintLibrary> vehicleBp;
+        if (blueprintName == "" || blueprintName == "random")
+        {
+            vehicleBp = bpLib->Filter("vehicle");
+        }
+        else
+        {
+            vehicleBp = bpLib->Filter(blueprintName);
+        }
+        auto bpTarget = RandomChoice(*vehicleBp, rng);
+        auto target = carlaWorld.TrySpawnActor(bpTarget, transform);
+        std::cout << "[INFO] Spawned npc     " << target->GetDisplayId() << '\n';
+        auto vehTarget = static_pointer_cast<cc::Vehicle>(target);
+        npcList.push_back(vehTarget);
+        vehTarget->SetVelocity(cg::Vector3D{0, 0, 0});
+        vehTarget->SetAngularVelocity(cg::Vector3D{0, 0, 0});
+        auto targetInitControl = vehTarget->GetControl();
+        targetInitControl.hand_brake = true;
+        vehTarget->ApplyControl(targetInitControl);
+        return vehTarget;
+    }
+
+    SharedPtr<cc::Actor> spawnStatic(const cg::Transform &transform, const string &blueprintName)
+    {
+        auto propBpLib = bpLib->Filter(blueprintName);
+        auto bpProp = RandomChoice(*propBpLib, rng);
+        auto prop = carlaWorld.TrySpawnActor(bpProp, transform);
+        std::cout << "[INFO] Spawned prop    " << prop->GetDisplayId() << '\n';
+        prop->SetSimulatePhysics(true);
+        propList.push_back(prop);
+        return prop;
+    }
+
+    SharedPtr<cc::Sensor> spawnGnss(cg::Transform &relativeTransform, cc::Actor *parent = 0)
+    {
+        auto gnssBp = *bpLib->Find("sensor.other.gnss");
+        cc::Actor *attachTo = parent;
+        if (!parent)
+        {
+            attachTo = player.get();
+        }
+        auto actorGnss = carlaWorld.SpawnActor(gnssBp, relativeTransform, attachTo);
+        std::cout << "[INFO] Spawned sensor  " << actorGnss->GetDisplayId() << '\n';
+        auto sensorGnss = static_pointer_cast<cc::Sensor>(actorGnss);
+        sensorList.push_back(sensorGnss);
+        return sensorGnss;
+    }
+
+    SharedPtr<cc::Sensor> spawnLidar(cg::Transform &relativeTransform, cc::Actor *parent = 0)
+    {
+        auto lidarBp = *bpLib->Find("sensor.lidar.ray_cast");
+        lidarBp.SetAttribute("channels", "64");              // Number of lasers
+        lidarBp.SetAttribute("range", "150.0");              // Maximum distance to measure/raycast in meters
+        lidarBp.SetAttribute("points_per_second", "128000"); // Points generated by all lasers per second
+        lidarBp.SetAttribute("rotation_frequency", "20");    // Lidar rotation frequency
+        lidarBp.SetAttribute("upper_fov", "10.0");           // Angle in degrees of the highest laser
+        lidarBp.SetAttribute("lower_fov", "-30.0");          // Angle in degrees of the lowest laser
+        lidarBp.SetAttribute("sensor_tick", "0.0");          // Simulation seconds between sensor captures
+        cc::Actor *attachTo = parent;
+        if (!parent)
+        {
+            attachTo = player.get();
+        }
+        auto actorLidar = carlaWorld.TrySpawnActor(lidarBp, relativeTransform, attachTo);
+        std::cout << "[INFO] Spawned sensor  " << actorLidar->GetDisplayId() << "\n";
+        auto sensorLidar = static_pointer_cast<cc::Sensor>(actorLidar);
+        sensorList.push_back(sensorLidar);
+        return sensorLidar;
+    }
+
+    SharedPtr<cc::Sensor> spawnCamera(cg::Transform &relativeTransform, cc::Actor *parent = 0)
+    {
+        cc::Actor *attachTo = parent;
+        if (!parent)
+        {
+            attachTo = player.get();
+        }
+        auto cameraBp = *bpLib->Find("sensor.camera.rgb");
+        auto actorCamera = carlaWorld.SpawnActor(cameraBp, relativeTransform, attachTo);
+        std::cout << "[INFO] Spawned sensor " << actorCamera->GetDisplayId() << '\n';
+        auto sensorCamera = static_pointer_cast<cc::Sensor>(actorCamera);
+        sensorList.push_back(sensorCamera);
+        return sensorCamera;
+    }
+
+    SharedPtr<cc::Sensor> spawnImu(cg::Transform &relativeTransform, cc::Actor *parent = 0)
+    {
+        cc::Actor *attachTo = parent;
+        if (!parent)
+        {
+            attachTo = player.get();
+        }
+        auto imuBp = *bpLib->Find("sensor.other.imu");
+        auto actorImu = carlaWorld.SpawnActor(imuBp, relativeTransform, attachTo);
+        std::cout << "[INFO] Spawned sensor  " << actorImu->GetDisplayId() << '\n';
+        auto sensorImu = static_pointer_cast<cc::Sensor>(actorImu);
+        sensorList.push_back(sensorImu);
+        return sensorImu;
+    }
+
 public:
     cc::World &carlaWorld;
     SharedPtr<cc::BlueprintLibrary> bpLib;
     SharedPtr<cc::Map> map;
+    cc::DebugHelper debugHelper;
 
     SharedPtr<cc::Vehicle> player;
     SharedPtr<cc::Actor> spectator;
@@ -294,100 +445,27 @@ void gameLoop(int16_t freq)
     MyWorld world(carlaWorld);
     world.setup();
 
-    // spawn actors
-    auto egoInitTransform = RandomChoice(world.map->GetRecommendedSpawnPoints(), rng);
-    //double spawnX = 427014.0254 - 426858.836012; // straight  UTM to UE4 coord, to find specific spawn point
-    //double spawnY = 5427935.493100 - 5427742.755;
-    double spawnX = 426932.0808 - 426858.836012; //uturn
-    double spawnY = 5427935.493100 - 5427740.02;
-    //double spawnX = 426782.0779 - 426858.836012; //square
-    //double spawnY = 5427935.493100 - 5427818.3064;
-    egoInitTransform.location.x = spawnX;
-    egoInitTransform.location.y = spawnY;
-    egoInitTransform.location.z = 3;
-    egoInitTransform.rotation.yaw = -180; //straight & uturn
-    //egoInitTransform.rotation.yaw = -90; //square
-    //auto bpPlayer = RandomChoice(*vehicleBp, rng);
-    auto bpPlayer = *world.bpLib->Find("vehicle.tesla.model3");
-    auto vehEgo = world.carlaWorld.TrySpawnActor(bpPlayer, egoInitTransform);
-    std::cout << "[INFO] Spawned player  " << vehEgo->GetDisplayId() << '\n';
-    auto player = static_pointer_cast<cc::Vehicle>(vehEgo);
-    cg::Vector3D vec(0, 0, 0);
-    world.player = player;
-    world.player->SetVelocity(vec);
-    auto egoPhysics = player->GetPhysicsControl();
-    //std::cout << "wheel radius: " << egoPhysics.wheels[0].radius << std::endl;
-    //std::cout << "mass center: (x,y,z) = (" << egoPhysics.center_of_mass.x << ", " << egoPhysics.center_of_mass.y << ", " << egoPhysics.center_of_mass.z << std::endl;
-    //std::cout << "use auto gear-box: " << egoPhysics.use_gear_autobox << std::endl;
-    egoPhysics.mass = 1854;
-    auto massCenter = egoPhysics.center_of_mass;
-    massCenter.x = 1.436;
-    massCenter.y = 0;
-    //massCenter.z = -0.526; // TODO: not sure center of mass in carla refers to ground plane or rear axle
-    egoPhysics.wheels[0].radius = 33;
-    egoPhysics.wheels[0].max_steer_angle = 54;
-    egoPhysics.wheels[1].radius = 33;
-    egoPhysics.wheels[1].max_steer_angle = 54;
-    egoPhysics.wheels[2].radius = 33;
-    egoPhysics.wheels[3].radius = 33;
-    player->ApplyPhysicsControl(egoPhysics);
+    cg::Transform egoT = RandomChoice(world.map->GetRecommendedSpawnPoints(), rng);
+    world.spawnPlayer(egoT, "vehicle.tesla.model3");
+    cg::Transform sensorOffset = makeTransform(0, 0, 3.5, 0, 0, 0);
+    world.spawnGnss(sensorOffset);
+    world.spawnLidar(sensorOffset);
+    cg::Transform target1T = makeTransformRelative(egoT, 100, 0, 0);
+    //world.spawnNpc(target1T);
 
-    auto targetTransform = RandomChoice(world.map->GetRecommendedSpawnPoints(), rng);
-    targetTransform.location.x = spawnX - 100;
-    targetTransform.location.y = spawnY;
-    targetTransform.location.z = 3;
-    auto vehicleBp = world.bpLib->Filter("vehicle");
-    auto bpTarget = RandomChoice(*vehicleBp, rng);
-    auto target = world.carlaWorld.TrySpawnActor(bpTarget, targetTransform);
-    std::cout << "[INFO] Spawned npc     " << target->GetDisplayId() << '\n';
-    auto vehTarget = static_pointer_cast<cc::Vehicle>(target);
-    world.npcList.push_back(vehTarget);
-    vehTarget->SetVelocity(vec);
-    auto targetInitControl = vehTarget->GetControl();
-    targetInitControl.hand_brake = true;
-    vehTarget->ApplyControl(targetInitControl);
-
-    auto propTransform = RandomChoice(world.map->GetRecommendedSpawnPoints(), rng);
-    propTransform.location.x = spawnX - 10;
-    propTransform.location.y = spawnY;
-    propTransform.location.z = 3;
-    auto propBpLib = world.bpLib->Filter("static.prop.constructioncone");
-    auto bpProp = RandomChoice(*propBpLib, rng);
-    auto prop = world.carlaWorld.TrySpawnActor(bpProp, propTransform);
-    std::cout << "[INFO] Spawned prop    " << prop->GetDisplayId() << '\n';
-    prop->SetSimulatePhysics(true);
-    world.propList.push_back(prop);
-
-    auto gnssTransform = makeTransform(0, 0, 3, 0, 0, 0);
-    auto gnssBp = world.bpLib->Find("sensor.other.gnss");
-    EXPECT_TRUE(gnssBp != nullptr);
-    auto actorGnss = world.carlaWorld.SpawnActor(*gnssBp, gnssTransform, world.player.get());
-    std::cout << "[INFO] Spawned sensor  " << actorGnss->GetDisplayId() << '\n';
-    auto sensorGnss = static_pointer_cast<cc::Sensor>(actorGnss);
-    world.sensorList.push_back(sensorGnss);
-
-    // auto imuTransform = makeTransform(0, 0, 3, 0, 0, 0);
-    // auto imuBp = world.bpLib->Find("sensor.other.imu");
-    // EXPECT_TRUE(imuBp != nullptr);
-    // auto actorImu = world.carlaWorld.SpawnActor(*imuBp, imuTransform, world.player.get());
-    // std::cout << "[INFO] Spawned sensor  " << actorImu->GetDisplayId() << '\n';
-    // auto sensorImu = static_pointer_cast<cc::Sensor>(actorImu);
-    // world.sensorList.push_back(sensorImu);
-
-    auto lidarTransform = makeTransform(0, 0, 3, 0, 0, 0);
-    auto lidarBp = *world.bpLib->Find("sensor.lidar.ray_cast");
-    lidarBp.SetAttribute("channels", "64");              // Number of lasers
-    lidarBp.SetAttribute("range", "150.0");              // Maximum distance to measure/raycast in meters
-    lidarBp.SetAttribute("points_per_second", "128000"); // Points generated by all lasers per second
-    lidarBp.SetAttribute("rotation_frequency", "20");    // Lidar rotation frequency
-    lidarBp.SetAttribute("upper_fov", "10.0");           // Angle in degrees of the highest laser
-    lidarBp.SetAttribute("lower_fov", "-30.0");          // Angle in degrees of the lowest laser
-    lidarBp.SetAttribute("sensor_tick", "0.0");          // Simulation seconds between sensor captures
-    auto actorLidar = world.carlaWorld.TrySpawnActor(lidarBp, lidarTransform, world.player.get());
-    std::cout << "[INFO] Spawned sensor  " << actorLidar->GetDisplayId() << "\n";
-    auto sensorLidar = static_pointer_cast<cc::Sensor>(actorLidar);
-    world.sensorList.push_back(sensorLidar);
     world.init();
+
+    // double spawnX = 427014.0254 - 426858.836012; // straight  UTM to UE4 coord, to find specific spawn point
+    // double spawnY = 5427935.493100 - 5427742.755;
+    // //double spawnX = 426932.0808 - 426858.836012; //uturn
+    // //double spawnY = 5427935.493100 - 5427740.02;
+    // //double spawnX = 426782.0779 - 426858.836012; //square
+    // //double spawnY = 5427935.493100 - 5427818.3064;
+    // //egoInitTransform.location.x = spawnX;
+    // //egoInitTransform.location.y = spawnY;
+    // //egoInitTransform.location.z = 3;
+    // //egoInitTransform.rotation.yaw = -180; //straight & uturn
+    // //egoInitTransform.rotation.yaw = -90; //square
 
     // game loop
     while (!keyboardIrruption)
@@ -401,5 +479,5 @@ void gameLoop(int16_t freq)
 int main()
 {
     signal(SIGINT, sig_handler);
-    gameLoop(100);
+    gameLoop(50);
 }

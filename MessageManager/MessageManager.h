@@ -110,23 +110,23 @@ inline string get_attr(const vector<cc::ActorAttributeValue> &attrs, const strin
 	}
 	throw "[ERROR] specified attribute not in the attributes list!";
 }
-inline void unreal2vehframe(const cg::Location &ego_location, const cg::Location &obj_location, double theta, cg::Location &res)
+inline cg::Location unreal2vehframe(const cg::Location &ego_location, const cg::Location &obj_location, double ego_yaw_deg)
 {
 	double xr = obj_location.x - ego_location.x;
 	double yr = obj_location.y - ego_location.y;
 	double zr = obj_location.z - ego_location.z;
-	double theta_rad = deg2rad(theta);
-	res.x = cos(theta_rad) * xr + sin(theta_rad) * yr;
-	res.y = sin(theta_rad) * xr - cos(theta_rad) * yr;
-	res.z = zr;
+	double theta_rad = deg2rad(ego_yaw_deg);
+	float x = cos(theta_rad) * xr + sin(theta_rad) * yr;
+	float y = sin(theta_rad) * xr - cos(theta_rad) * yr;
+	float z = zr;
+	return cg::Location{x, y, z};
 }
 inline bool in_vehframe_test(const cc::Vehicle &vehState, const cc::ActorPtr pActor)
 {
 	cg::Location locEgo = vehState.GetTransform().location;
 	cg::Location locObj = pActor->GetTransform().location;
 	float yaw = vehState.GetTransform().rotation.yaw;
-	cg::Location locVehframe;
-	unreal2vehframe(locEgo, locObj, yaw, locVehframe);
+	cg::Location locVehframe = unreal2vehframe(locEgo, locObj, yaw);
 	float deltaZ = locObj.z - locEgo.z;
 	return (locVehframe.x < (MAP_CENTER_ROW * FUSIONMAP_RESOLUTION + 3)) &&
 		   (locVehframe.x > -((MAP_ROW_NUM - MAP_CENTER_ROW - 1) * FUSIONMAP_RESOLUTION + 3)) &&
@@ -167,6 +167,9 @@ inline bool checkLaneType(carla::road::Lane::LaneType type)
 		break;
 	case LaneType::Bidirectional:
 		return true;
+		break;
+	case LaneType::Shoulder:
+		return false;
 		break;
 	default:
 		return false;
@@ -246,6 +249,35 @@ inline const string laneType2string(carla::road::Lane::LaneType type)
 		break;
 	}
 }
+inline const string lineType2string(carla::road::element::LaneMarking::Type type)
+{
+	typedef carla::road::element::LaneMarking::Type LaneLineType;
+	switch (type)
+	{
+	case LaneLineType::BottsDots:
+		return "BottsDots";
+	case LaneLineType::Broken:
+		return "Broken";
+	case LaneLineType::BrokenBroken:
+		return "BrokenBroken";
+	case LaneLineType::BrokenSolid:
+		return "BrokenSolid";
+	case LaneLineType::Curb:
+		return "Curb";
+	case LaneLineType::Grass:
+		return "Grass";
+	case LaneLineType::None:
+		return "None";
+	case LaneLineType::Other:
+		return "Other";
+	case LaneLineType::Solid:
+		return "Solid";
+	case LaneLineType::SolidBroken:
+		return "SolidBroken";
+	case LaneLineType::SolidSolid:
+		return "SolidSolid";
+	}
+}
 
 class MessageManager
 {
@@ -303,7 +335,7 @@ public:
 	void pack_objectlist(const cc::ActorList &actors);
 	void pack_fusionmap_lidar(const csd::LidarMeasurement &lidarMsg);
 	void pack_fusionmap_raster();
-	void pack_roadmark(const SharedPtr<cc::Waypoint> current, cc::World &world);
+	void pack_roadmarking(const SharedPtr<cc::Waypoint> current, cc::DebugHelper &debugHelper, bool enableDraw);
 	void pack_trafficlight();
 
 	PredictedObject pack_one_object(cc::ActorPtr pActor);
@@ -315,6 +347,8 @@ private:
 	void pub_objectlist_loop(int freq);
 	void pub_roadmarking_loop(int freq);
 	void pub_trafficlight_loop(int freq);
+
+	void visRoadmarking(cc::DebugHelper &debugHelper);
 
 public:
 #ifdef USE_ZCM
@@ -337,8 +371,7 @@ public:
 	vector<vector<float>> pcdRawData;
 
 private:
-	std::vector<std::thread>
-		_pub_threads;
+	std::vector<std::thread> _pub_threads;
 #ifdef USE_LCM
 	std::vector<std::thread> _sub_threads;
 #endif

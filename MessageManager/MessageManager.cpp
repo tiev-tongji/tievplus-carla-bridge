@@ -356,8 +356,7 @@ PredictedObject MessageManager::pack_one_object(cc::ActorPtr pActor)
 		double t = TIMESTEP_OBJECTLIST_PREDICT;
 		locPred.x = loc.x + i * t * vel.x + 0.5 * pow(i * t, 2) * pActor->GetAcceleration().x;
 		locPred.y = loc.y + i * t * vel.y + 0.5 * pow(i * t, 2) * pActor->GetAcceleration().y;
-		cg::Location locVehframe;
-		unreal2vehframe(locEgo, locPred, rotEgo.yaw, locVehframe);
+		cg::Location locVehframe = unreal2vehframe(locEgo, locPred, rotEgo.yaw);
 		predObj.trajectory_point[0][i] = locVehframe.x;
 		predObj.trajectory_point[1][i] = locVehframe.y;
 	}
@@ -382,7 +381,7 @@ PredictedObject MessageManager::pack_one_object(cc::ActorPtr pActor)
 
 	for (auto &vertex : vertexs)
 	{
-		unreal2vehframe(locEgo, vertex, rotEgo.yaw, vertex);
+		vertex = unreal2vehframe(locEgo, vertex, rotEgo.yaw);
 	}
 	for (int i = 0; i < 4; ++i)
 	{
@@ -532,7 +531,7 @@ void MessageManager::pack_fusionmap_lidar(const csd::LidarMeasurement &lidarMsg)
 {
 	_mutex.lock();
 
-	auto t1 = std::chrono::steady_clock::now();
+	//auto t1 = std::chrono::steady_clock::now();
 
 	double duration = lidarMsg.GetTimestamp() * 1000 - FUSIONMAP.time_stamp;
 	if (duration < 1000 / LIDAR_ROTATE_FREQUENCY)
@@ -579,23 +578,24 @@ void MessageManager::pack_fusionmap_lidar(const csd::LidarMeasurement &lidarMsg)
 		}
 	}
 
-	auto t2 = std::chrono::steady_clock::now();
-	double dr_ms_pack_fusionmap = std::chrono::duration<double, std::milli>(t2 - t1).count();
+	//auto t2 = std::chrono::steady_clock::now();
+	//double dr_ms_pack_fusionmap = std::chrono::duration<double, std::milli>(t2 - t1).count();
 	//std::cout << "time to pack lidar points: " << dr_ms_pack_fusionmap << std::endl;
 
 	_mutex.unlock();
 }
 
-void MessageManager::pack_roadmark(const SharedPtr<cc::Waypoint> current, cc::World &world)
+void visRoadmarking(cc::DebugHelper &debugHelper)
+{
+	;
+}
+
+void MessageManager::pack_roadmarking(const SharedPtr<cc::Waypoint> current, cc::DebugHelper &debugHelper, bool enableDraw)
 {
 	_mutex.lock();
 
-	typedef carla::road::Lane::LaneType LaneType;
 	typedef carla::road::element::LaneMarking::LaneChange LaneChange;
-	typedef carla::road::element::LaneMarking::Color LaneLineColor;
 	typedef carla::road::element::LaneMarking::Type LaneLineType;
-
-	auto debugHelper = world.MakeDebugHelper();
 
 	if (current->IsJunction())
 	{
@@ -603,9 +603,13 @@ void MessageManager::pack_roadmark(const SharedPtr<cc::Waypoint> current, cc::Wo
 		return;
 	}
 
-	//std::cout << "-----------------------------------------------------------" << std::endl;
+	std::cout << "-----------------------------------------------------------" << std::endl;
 	list<SharedPtr<cc::Waypoint>> slice;
 	slice.push_back(current);
+	std::cout << "lane id: " << current->GetLaneId() << " lane type: " << laneType2string(current->GetType()) << std::endl;
+	std::cout << ">>>linetype left: " << lineType2string(current->GetLeftLaneMarking()->type)
+			  << " right: " << lineType2string(current->GetRightLaneMarking()->type) << std::endl;
+	std::cout << "++++++++++++++++++++++++++++++++" << std::endl;
 	bool hasLeft = true;
 	bool reverseL = false;
 	int numLeftLane = 0;
@@ -620,32 +624,35 @@ void MessageManager::pack_roadmark(const SharedPtr<cc::Waypoint> current, cc::Wo
 
 		if (!left.get())
 		{
-			//std::cout << "no left neigher\n";
+			std::cout << "no left neigher\n";
 			hasLeft = false;
 		}
 		else if (!checkLaneType(left->GetType()))
 		{
-			//std::cout << "invalid lanetype\n";
+			std::cout << "invalid lanetype\n";
 			hasLeft = false;
 		}
 		else if (left->GetLaneId() * current->GetLaneId() < 0)
 		{
-			//TODO: now only consider single direction of the road
-			//hasLeft = false;
 			slice.push_back(left);
 			++numLeftLane;
 			currentL = left;
 			reverseL = true;
-			//std::cout << "lane id: " << left->GetLaneId() << " lane type: " << laneType2string(left->GetType()) << std::endl;
+			std::cout << "lane id: " << left->GetLaneId() << " lane type: " << laneType2string(left->GetType()) << std::endl;
+			std::cout << ">>>linetype left: " << lineType2string(left->GetRightLaneMarking()->type)
+					  << " right: " << lineType2string(left->GetLeftLaneMarking()->type) << std::endl;
 		}
 		else
 		{
 			slice.push_back(left);
 			++numLeftLane;
 			currentL = left;
-			//std::cout << "lane id: " << left->GetLaneId() << " lane type: " << laneType2string(left->GetType()) << std::endl;
+			std::cout << "lane id: " << left->GetLaneId() << " lane type: " << laneType2string(left->GetType()) << std::endl;
+			std::cout << ">>>linetype left: " << lineType2string(left->GetLeftLaneMarking()->type)
+					  << " right: " << lineType2string(left->GetRightLaneMarking()->type) << std::endl;
 		}
 	}
+	std::cout << "==================================" << std::endl;
 	bool hasRight = true;
 	bool reverseR = false;
 	int numRightLane = 0;
@@ -660,30 +667,32 @@ void MessageManager::pack_roadmark(const SharedPtr<cc::Waypoint> current, cc::Wo
 
 		if (!right.get())
 		{
-			//std::cout << "no right neigher\n";
+			std::cout << "no right neigher\n";
 			hasRight = false;
 		}
 		else if (!checkLaneType(right->GetType()))
 		{
-			//std::cout << "invalid lanetype\n";
+			std::cout << "invalid lanetype\n";
 			hasRight = false;
 		}
 		else if (right->GetLaneId() * current->GetLaneId() < 0)
 		{
-			//TODO: now only consider single direction of the road
-			//hasRight = false;
-			slice.push_back(right);
+			slice.push_front(right);
 			++numLeftLane;
 			currentL = right;
 			reverseR = true;
-			//std::cout << "lane id: " << right->GetLaneId() << " lane type: " << laneType2string(right->GetType()) << std::endl;
+			std::cout << "lane id: " << right->GetLaneId() << " lane type: " << laneType2string(right->GetType()) << std::endl;
+			std::cout << ">>>linetype left: " << lineType2string(right->GetRightLaneMarking()->type)
+					  << " right: " << lineType2string(right->GetLeftLaneMarking()->type) << std::endl;
 		}
 		else
 		{
 			slice.push_front(right);
 			++numRightLane;
 			currentR = right;
-			//std::cout << "lane id: " << right->GetLaneId() << " lane type: " << laneType2string(right->GetType()) << std::endl;
+			std::cout << "lane id: " << right->GetLaneId() << " lane type: " << laneType2string(right->GetType()) << std::endl;
+			std::cout << ">>>linetype left: " << lineType2string(right->GetLeftLaneMarking()->type)
+					  << " right: " << lineType2string(right->GetRightLaneMarking()->type) << std::endl;
 		}
 	}
 	ROADMARKING.current_lane_id = numRightLane;
@@ -693,6 +702,7 @@ void MessageManager::pack_roadmark(const SharedPtr<cc::Waypoint> current, cc::Wo
 	{
 		Lane lane;
 		lane.width = wp->GetLaneWidth();
+		// FIXME: wrong!
 		switch (wp->GetLaneChange())
 		{
 		case LaneChange::None:
@@ -715,6 +725,8 @@ void MessageManager::pack_roadmark(const SharedPtr<cc::Waypoint> current, cc::Wo
 		LaneLine lineL;
 		lineL.distance = LINE_POINT_DISTANCE;
 		auto markingL = wp->GetLeftLaneMarking();
+		if (wp->GetLaneId() * current->GetLaneId() < 0)
+			markingL = wp->GetRightLaneMarking();
 		if (markingL->type == LaneLineType::Solid)
 		{
 			lineL.line_type = lineL.kTypeDividing;
@@ -741,7 +753,9 @@ void MessageManager::pack_roadmark(const SharedPtr<cc::Waypoint> current, cc::Wo
 
 		LaneLine lineR;
 		lineR.distance = LINE_POINT_DISTANCE;
-		auto markingR = wp->GetLeftLaneMarking();
+		auto markingR = wp->GetRightLaneMarking();
+		if (wp->GetLaneId() * current->GetLaneId() < 0)
+			markingR = wp->GetLeftLaneMarking();
 		if (markingR->type == LaneLineType::Solid)
 		{
 			lineR.line_type = lineR.kTypeDividing;
@@ -767,6 +781,8 @@ void MessageManager::pack_roadmark(const SharedPtr<cc::Waypoint> current, cc::Wo
 		}
 
 		vector<SharedPtr<cc::Waypoint>> waypoints;
+		cg::Location lastR;
+		cg::Location lastL;
 		for (size_t i = 0; i < LINE_POINTS_NUM + 1; ++i)
 		{
 			auto nexts = wp->GetNext(LINE_POINT_DISTANCE * (i + 1));
@@ -785,24 +801,68 @@ void MessageManager::pack_roadmark(const SharedPtr<cc::Waypoint> current, cc::Wo
 				waypoints.push_back(nexts[0]);
 				double width = waypoints[i]->GetLaneWidth();
 				float yaw = deg2rad(waypoints[i]->GetTransform().rotation.yaw);
+				if (wp->GetLaneId() * current->GetLaneId() < 0)
+					yaw = deg2rad(waypoints[i]->GetTransform().rotation.yaw - 180);
 				auto loc = waypoints[i]->GetTransform().location;
 				float xl = loc.x + width / 2 * sin(yaw);
 				float yl = loc.y - width / 2 * cos(yaw);
 				float xr = loc.x - width / 2 * sin(yaw);
 				float yr = loc.y + width / 2 * cos(yaw);
-				debugHelper.DrawPoint(cg::Location{xl, yl, loc.z}, 0.05, cc::DebugHelper::Color{220, 90, 0}, 0.1, false);
-				debugHelper.DrawPoint(cg::Location{xr, yr, loc.z}, 0.05, cc::DebugHelper::Color{220, 90, 0}, 0.1, false);
-
-				cg::Location resl;
-				unreal2vehframe(vehState->GetLocation(), cg::Location(xl, yl, 0),
-								vehState->GetTransform().rotation.yaw, resl);
+				if (i > 0)
+				{
+					cc::DebugHelper::Color green{20, 200, 90};
+					cc::DebugHelper::Color red{240, 30, 40};
+					cc::DebugHelper::Color colorL;
+					cc::DebugHelper::Color colorR;
+					switch (lineL.line_type)
+					{
+					case LaneLine::kTypeDividing:
+						colorL = red;
+						break;
+					case LaneLine::kTypeTypeNoPass:
+						colorL = red;
+						break;
+					case LaneLine::kTypeGuiding:
+						colorL = green;
+						break;
+					case LaneLine::kTypeOneWayPass:
+						colorL = green;
+						break;
+					default:
+						break;
+					}
+					switch (lineR.line_type)
+					{
+					case LaneLine::kTypeDividing:
+						colorR = red;
+						break;
+					case LaneLine::kTypeTypeNoPass:
+						colorR = red;
+						break;
+					case LaneLine::kTypeGuiding:
+						colorR = green;
+						break;
+					case LaneLine::kTypeOneWayPass:
+						colorR = green;
+						break;
+					default:
+						break;
+					}
+					debugHelper.DrawLine(lastL, cg::Location{xl, yl, loc.z}, 0.1, colorL, 0.05, false);
+					debugHelper.DrawLine(lastR, cg::Location{xr, yr, loc.z}, 0.1, colorR, 0.05, false);
+				}
+				lastR.x = xr;
+				lastR.y = yr;
+				lastR.z = loc.z;
+				lastL.x = xl;
+				lastL.y = yl;
+				lastL.z = loc.z;
+				cg::Location resl = unreal2vehframe(vehState->GetLocation(), cg::Location(xl, yl, 0), vehState->GetTransform().rotation.yaw);
 				LinePoint pl;
 				pl.x = resl.x;
 				pl.y = resl.y;
 				lineL.points.push_back(pl);
-				cg::Location resr;
-				unreal2vehframe(vehState->GetLocation(), cg::Location(xr, yr, 0),
-								vehState->GetTransform().rotation.yaw, resr);
+				cg::Location resr = unreal2vehframe(vehState->GetLocation(), cg::Location(xr, yr, 0), vehState->GetTransform().rotation.yaw);
 				LinePoint pr;
 				pr.x = resr.x;
 				pr.y = resr.y;
