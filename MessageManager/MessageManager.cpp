@@ -260,20 +260,20 @@ void MessageManager::pack_navinfo(const csd::GnssMeasurement &gnssMsg)
 	auto rot = vehState->GetTransform().rotation;
 
 	// position
-	GeographicLib::GeoCoords coord("121:12:44E 31:16:54N"); // geographic reference point relocated to tongji
-	NAVINFO.utm_x = coord.Easting() + loc.x;
-	NAVINFO.utm_y = coord.Northing() - loc.y;
-	coord.Reset(coord.Zone(), coord.Northp(), NAVINFO.utm_x, NAVINFO.utm_y);
-	NAVINFO.latitude = coord.Latitude();
-	NAVINFO.longitude = coord.Longitude();
-	NAVINFO.altitude = gnssMsg.GetAltitude();
-
-	// NAVINFO.latitude = gnssMsg.GetLatitude();
-	// NAVINFO.longitude = gnssMsg.GetLongitude();
+	// GeographicLib::GeoCoords coord("121:12:44E 31:16:54N"); // geographic reference point relocated to tongji
+	// NAVINFO.utm_x = coord.Easting() + loc.x;
+	// NAVINFO.utm_y = coord.Northing() - loc.y;
+	// coord.Reset(coord.Zone(), coord.Northp(), NAVINFO.utm_x, NAVINFO.utm_y);
+	// NAVINFO.latitude = coord.Latitude();
+	// NAVINFO.longitude = coord.Longitude();
 	// NAVINFO.altitude = gnssMsg.GetAltitude();
-	// coord.Reset(NAVINFO.latitude, NAVINFO.longitude);
-	// NAVINFO.utm_x = coord.Easting();
-	// NAVINFO.utm_y = coord.Northing();
+
+	NAVINFO.latitude = gnssMsg.GetLatitude();
+	NAVINFO.longitude = gnssMsg.GetLongitude();
+	NAVINFO.altitude = gnssMsg.GetAltitude();
+	coord.Reset(NAVINFO.latitude, NAVINFO.longitude);
+	NAVINFO.utm_x = coord.Easting();
+	NAVINFO.utm_y = coord.Northing();
 
 	//printf("UE4 position: (%f, %f, %f, %f, %f, %f)\n", loc.x, loc.y, loc.z, rot.roll, rot.pitch, rot.yaw);
 	//printf("GPS: (%f, %f)\n", NAVINFO.latitude, NAVINFO.longitude);
@@ -594,6 +594,8 @@ void MessageManager::pack_roadmarking(const SharedPtr<cc::Waypoint> current, cc:
 {
 	_mutex.lock();
 
+	auto t1 = std::chrono::steady_clock::now();
+
 	typedef carla::road::element::LaneMarking::LaneChange LaneChange;
 	typedef carla::road::element::LaneMarking::Type LaneLineType;
 
@@ -603,13 +605,13 @@ void MessageManager::pack_roadmarking(const SharedPtr<cc::Waypoint> current, cc:
 		return;
 	}
 
-	std::cout << "-----------------------------------------------------------" << std::endl;
+	//std::cout << "-----------------------------------------------------------" << std::endl;
 	list<SharedPtr<cc::Waypoint>> slice;
 	slice.push_back(current);
-	std::cout << "lane id: " << current->GetLaneId() << " lane type: " << laneType2string(current->GetType()) << std::endl;
-	std::cout << ">>>linetype left: " << lineType2string(current->GetLeftLaneMarking()->type)
-			  << " right: " << lineType2string(current->GetRightLaneMarking()->type) << std::endl;
-	std::cout << "++++++++++++++++++++++++++++++++" << std::endl;
+	//std::cout << "lane id: " << current->GetLaneId() << " lane type: " << laneType2string(current->GetType()) << std::endl;
+	//std::cout << ">>>linetype left: " << lineType2string(current->GetLeftLaneMarking()->type)
+	//		  << " right: " << lineType2string(current->GetRightLaneMarking()->type) << std::endl;
+	//std::cout << "++++++++++++++++++++++++++++++++" << std::endl;
 	bool hasLeft = true;
 	bool reverseL = false;
 	int numLeftLane = 0;
@@ -624,12 +626,12 @@ void MessageManager::pack_roadmarking(const SharedPtr<cc::Waypoint> current, cc:
 
 		if (!left.get())
 		{
-			std::cout << "no left neigher\n";
+			//std::cout << "no left neigher\n";
 			hasLeft = false;
 		}
 		else if (!checkLaneType(left->GetType()))
 		{
-			std::cout << "invalid lanetype\n";
+			//std::cout << "invalid lanetype\n";
 			hasLeft = false;
 		}
 		else if (left->GetLaneId() * current->GetLaneId() < 0)
@@ -638,21 +640,21 @@ void MessageManager::pack_roadmarking(const SharedPtr<cc::Waypoint> current, cc:
 			++numLeftLane;
 			currentL = left;
 			reverseL = true;
-			std::cout << "lane id: " << left->GetLaneId() << " lane type: " << laneType2string(left->GetType()) << std::endl;
-			std::cout << ">>>linetype left: " << lineType2string(left->GetRightLaneMarking()->type)
-					  << " right: " << lineType2string(left->GetLeftLaneMarking()->type) << std::endl;
+			//std::cout << "lane id: " << left->GetLaneId() << " lane type: " << laneType2string(left->GetType()) << std::endl;
+			//std::cout << ">>>linetype left: " << lineType2string(left->GetRightLaneMarking()->type)
+			//		  << " right: " << lineType2string(left->GetLeftLaneMarking()->type) << std::endl;
 		}
 		else
 		{
 			slice.push_back(left);
 			++numLeftLane;
 			currentL = left;
-			std::cout << "lane id: " << left->GetLaneId() << " lane type: " << laneType2string(left->GetType()) << std::endl;
-			std::cout << ">>>linetype left: " << lineType2string(left->GetLeftLaneMarking()->type)
-					  << " right: " << lineType2string(left->GetRightLaneMarking()->type) << std::endl;
+			//std::cout << "lane id: " << left->GetLaneId() << " lane type: " << laneType2string(left->GetType()) << std::endl;
+			//std::cout << ">>>linetype left: " << lineType2string(left->GetLeftLaneMarking()->type)
+			//		  << " right: " << lineType2string(left->GetRightLaneMarking()->type) << std::endl;
 		}
 	}
-	std::cout << "==================================" << std::endl;
+	//std::cout << "==================================" << std::endl;
 	bool hasRight = true;
 	bool reverseR = false;
 	int numRightLane = 0;
@@ -667,12 +669,12 @@ void MessageManager::pack_roadmarking(const SharedPtr<cc::Waypoint> current, cc:
 
 		if (!right.get())
 		{
-			std::cout << "no right neigher\n";
+			//std::cout << "no right neigher\n";
 			hasRight = false;
 		}
 		else if (!checkLaneType(right->GetType()))
 		{
-			std::cout << "invalid lanetype\n";
+			//std::cout << "invalid lanetype\n";
 			hasRight = false;
 		}
 		else if (right->GetLaneId() * current->GetLaneId() < 0)
@@ -681,18 +683,18 @@ void MessageManager::pack_roadmarking(const SharedPtr<cc::Waypoint> current, cc:
 			++numLeftLane;
 			currentL = right;
 			reverseR = true;
-			std::cout << "lane id: " << right->GetLaneId() << " lane type: " << laneType2string(right->GetType()) << std::endl;
-			std::cout << ">>>linetype left: " << lineType2string(right->GetRightLaneMarking()->type)
-					  << " right: " << lineType2string(right->GetLeftLaneMarking()->type) << std::endl;
+			//std::cout << "lane id: " << right->GetLaneId() << " lane type: " << laneType2string(right->GetType()) << std::endl;
+			//std::cout << ">>>linetype left: " << lineType2string(right->GetRightLaneMarking()->type)
+			//		  << " right: " << lineType2string(right->GetLeftLaneMarking()->type) << std::endl;
 		}
 		else
 		{
 			slice.push_front(right);
 			++numRightLane;
 			currentR = right;
-			std::cout << "lane id: " << right->GetLaneId() << " lane type: " << laneType2string(right->GetType()) << std::endl;
-			std::cout << ">>>linetype left: " << lineType2string(right->GetLeftLaneMarking()->type)
-					  << " right: " << lineType2string(right->GetRightLaneMarking()->type) << std::endl;
+			//std::cout << "lane id: " << right->GetLaneId() << " lane type: " << laneType2string(right->GetType()) << std::endl;
+			//std::cout << ">>>linetype left: " << lineType2string(right->GetLeftLaneMarking()->type)
+			//		  << " right: " << lineType2string(right->GetRightLaneMarking()->type) << std::endl;
 		}
 	}
 	ROADMARKING.current_lane_id = numRightLane;
@@ -808,48 +810,51 @@ void MessageManager::pack_roadmarking(const SharedPtr<cc::Waypoint> current, cc:
 				float yl = loc.y - width / 2 * cos(yaw);
 				float xr = loc.x - width / 2 * sin(yaw);
 				float yr = loc.y + width / 2 * cos(yaw);
-				if (i > 0)
+				if (enableDraw)
 				{
-					cc::DebugHelper::Color green{20, 200, 90};
-					cc::DebugHelper::Color red{240, 30, 40};
-					cc::DebugHelper::Color colorL;
-					cc::DebugHelper::Color colorR;
-					switch (lineL.line_type)
+					if (i > 0)
 					{
-					case LaneLine::kTypeDividing:
-						colorL = red;
-						break;
-					case LaneLine::kTypeTypeNoPass:
-						colorL = red;
-						break;
-					case LaneLine::kTypeGuiding:
-						colorL = green;
-						break;
-					case LaneLine::kTypeOneWayPass:
-						colorL = green;
-						break;
-					default:
-						break;
+						cc::DebugHelper::Color green{20, 200, 90};
+						cc::DebugHelper::Color red{240, 30, 40};
+						cc::DebugHelper::Color colorL;
+						cc::DebugHelper::Color colorR;
+						switch (lineL.line_type)
+						{
+						case LaneLine::kTypeDividing:
+							colorL = red;
+							break;
+						case LaneLine::kTypeTypeNoPass:
+							colorL = red;
+							break;
+						case LaneLine::kTypeGuiding:
+							colorL = green;
+							break;
+						case LaneLine::kTypeOneWayPass:
+							colorL = green;
+							break;
+						default:
+							break;
+						}
+						switch (lineR.line_type)
+						{
+						case LaneLine::kTypeDividing:
+							colorR = red;
+							break;
+						case LaneLine::kTypeTypeNoPass:
+							colorR = red;
+							break;
+						case LaneLine::kTypeGuiding:
+							colorR = green;
+							break;
+						case LaneLine::kTypeOneWayPass:
+							colorR = green;
+							break;
+						default:
+							break;
+						}
+						debugHelper.DrawLine(lastL, cg::Location{xl, yl, loc.z}, 0.1, colorL, 0.05, false);
+						debugHelper.DrawLine(lastR, cg::Location{xr, yr, loc.z}, 0.1, colorR, 0.05, false);
 					}
-					switch (lineR.line_type)
-					{
-					case LaneLine::kTypeDividing:
-						colorR = red;
-						break;
-					case LaneLine::kTypeTypeNoPass:
-						colorR = red;
-						break;
-					case LaneLine::kTypeGuiding:
-						colorR = green;
-						break;
-					case LaneLine::kTypeOneWayPass:
-						colorR = green;
-						break;
-					default:
-						break;
-					}
-					debugHelper.DrawLine(lastL, cg::Location{xl, yl, loc.z}, 0.1, colorL, 0.05, false);
-					debugHelper.DrawLine(lastR, cg::Location{xr, yr, loc.z}, 0.1, colorR, 0.05, false);
 				}
 				lastR.x = xr;
 				lastR.y = yr;
@@ -900,6 +905,10 @@ void MessageManager::pack_roadmarking(const SharedPtr<cc::Waypoint> current, cc:
 	ROADMARKING.chevron.num = 1;
 	ROADMARKING.chevron.chevron_points.push_back(LinePoint{});
 	ROADMARKING.chevron.distance = -1;
+
+	auto t2 = std::chrono::steady_clock::now();
+	double dr_ms_pack_roadmarking = std::chrono::duration<double, std::milli>(t2 - t1).count();
+	//std::cout << "time to pack roadmarkinglist: " << dr_ms_pack_roadmarking << std::endl;
 
 	_mutex.unlock();
 }

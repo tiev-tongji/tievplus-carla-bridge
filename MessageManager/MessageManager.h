@@ -62,6 +62,7 @@ ZeroCM Message Manager
 #include "carla/sensor/data/LidarMeasurement.h"
 #include "carla/sensor/data/Image.h"
 #include "carla/client/DebugHelper.h"
+#include "carla/trafficmanager/TrackTraffic.h"
 
 namespace cc = carla::client;
 namespace cg = carla::geom;
@@ -282,7 +283,10 @@ inline const string lineType2string(carla::road::element::LaneMarking::Type type
 class MessageManager
 {
 public:
-	MessageManager(std::string url) : TUNNEL(url), _need_stop(false) { CONTROL.car_gear_command = 1; };
+	MessageManager(std::string url) : TUNNEL(url), _need_stop(false)
+	{
+		CONTROL.car_gear_command = 4;
+	};
 	MessageManager() : _need_stop(false){};
 	MessageManager(MessageManager const &) = delete;
 	MessageManager &operator=(MessageManager const &) = delete;

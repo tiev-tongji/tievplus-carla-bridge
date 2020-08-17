@@ -9,14 +9,15 @@
 //#define OPT_TIME_TEST
 
 //#define HIL_MODE
-#define AUTOPILOT_MODE
+//#define AUTOPILOT_MODE
 
 static const string HOST = "127.0.0.1"; // sercer host.
 static const uint16_t PORT = 2000;      // server post.
 static const size_t WORKER_THREADS = 0ULL;
 static const string ZCM_URL = "udpm://239.255.76.67:7667?ttl=1";
 static const string PID_PARAMETER_FILEPATH = "../cfg/pid_parameters.json";
-static const string TOWN_NAME = "Town05";
+static const string TOWN_NAME = "Town06";
+static const double SIM_FREQ = 50;
 static std::mt19937_64 rng((std::random_device())());
 static volatile bool keyboardIrruption = false;
 
@@ -64,8 +65,8 @@ void sig_handler(int sig)
 class MyWorld
 {
 public:
-    MyWorld(cc::World &carlaWorld)
-        : carlaWorld(carlaWorld), debugHelper(carlaWorld.MakeDebugHelper()),
+    MyWorld(cc::World &carlaWorld, cc::TrafficManager &tm)
+        : carlaWorld(carlaWorld), tm(tm), debugHelper(carlaWorld.MakeDebugHelper()),
           msgManager(ZCM_URL), pidController(PID_PARAMETER_FILEPATH){};
     ~MyWorld()
     {
@@ -179,15 +180,22 @@ public:
         }
     }
 
+    void setServerSyncMode()
+    {
+        // more precision of simulation: async mode, fixed delta_time
+        auto worldSettings = carlaWorld.GetSettings();
+        worldSettings.synchronous_mode = true;
+        worldSettings.fixed_delta_seconds = 1.0 / SIM_FREQ;
+        // worldSettings.fixed_delta_seconds = 0.02;
+        carlaWorld.ApplySettings(worldSettings);
+    }
+
     void init()
     {
-        // auto worldSettings = carlaWorld.GetSettings();
-        // //worldSettings.synchronous_mode = true;
-        // worldSettings.fixed_delta_seconds = 0.02;
-        // carlaWorld.ApplySettings(worldSettings);
         spectator = carlaWorld.GetSpectator();
         initMessager();
         rigisterSensorCallback();
+        //setServerSyncMode();
 #ifdef AUTOPILOT_MODE
         // set carla inner autopilot mode
         player->SetAutopilot();
@@ -208,8 +216,22 @@ public:
         spectator->SetTransform(transform);
     }
 
+    void forceLaneChange(SharedPtr<cc::Vehicle> npc, double dist, bool toLeft)
+    {
+        static bool changed = false;
+        auto loc = unreal2vehframe(player->GetLocation(), npc->GetLocation(), player->GetTransform().rotation.yaw);
+        std::cout << "lanechange control, loc.x: " << loc.x << " dist: " << dist << std::endl;
+        if (loc.x > dist && !changed)
+        {
+            tm.SetForceLaneChange(npc, toLeft);
+            std::cout << "!!!!!!!!!!!!!!!HAVE CHANGED!!!!!!!!!!!!" << std::endl;
+            changed = true;
+        }
+    }
+
     void tick()
     {
+        //carlaWorld.Tick(10s);
         carlaWorld.WaitForTick(1s);
         relocateSpectator2egoCar();
 
@@ -330,9 +352,9 @@ public:
         npcList.push_back(vehTarget);
         vehTarget->SetVelocity(cg::Vector3D{0, 0, 0});
         vehTarget->SetAngularVelocity(cg::Vector3D{0, 0, 0});
-        auto targetInitControl = vehTarget->GetControl();
-        targetInitControl.hand_brake = true;
-        vehTarget->ApplyControl(targetInitControl);
+        //auto targetInitControl = vehTarget->GetControl();
+        //targetInitControl.hand_brake = true;
+        //vehTarget->ApplyControl(targetInitControl);
         return vehTarget;
     }
 
@@ -416,6 +438,7 @@ public:
 
 public:
     cc::World &carlaWorld;
+    cc::TrafficManager &tm;
     SharedPtr<cc::BlueprintLibrary> bpLib;
     SharedPtr<cc::Map> map;
     cc::DebugHelper debugHelper;
@@ -442,42 +465,38 @@ void gameLoop(int16_t freq)
     // get world, blueprints and map
     //cc::World carlaWorld = client.LoadWorld(TOWN_NAME);
     cc::World carlaWorld = client.GetWorld();
-    MyWorld world(carlaWorld);
+    cc::TrafficManager tm = client.GetInstanceTM();
+    MyWorld world(carlaWorld, tm);
     world.setup();
 
-    cg::Transform egoT = RandomChoice(world.map->GetRecommendedSpawnPoints(), rng);
+    //cg::Transform egoT = RandomChoice(world.map->GetRecommendedSpawnPoints(), rng);
+    cg::Transform egoT = makeTransform(25.527479, 146.448837, 3.5, 0, 0.5, 0); // TOWN06 straight road with 5 lanes
+    cg::Transform egoT = makeTransform(, , 3, 0, 0, , 0);                      // TOWN03 0817
     world.spawnPlayer(egoT, "vehicle.tesla.model3");
     cg::Transform sensorOffset = makeTransform(0, 0, 3.5, 0, 0, 0);
     world.spawnGnss(sensorOffset);
-    world.spawnLidar(sensorOffset);
-    cg::Transform target1T = makeTransformRelative(egoT, 100, 0, 0);
-    //world.spawnNpc(target1T);
+    //world.spawnLidar(sensorOffset);
+    //cg::Transform target1T = makeTransformRelative(egoT, -5, 3.5, 0);
+    //auto npc = world.spawnNpc(target1T, "vehicle.audi.tt");
+    //cg::Transform target2T = makeTransformRelative(egoT, 60, 0, 0);
 
     world.init();
 
-    // double spawnX = 427014.0254 - 426858.836012; // straight  UTM to UE4 coord, to find specific spawn point
-    // double spawnY = 5427935.493100 - 5427742.755;
-    // //double spawnX = 426932.0808 - 426858.836012; //uturn
-    // //double spawnY = 5427935.493100 - 5427740.02;
-    // //double spawnX = 426782.0779 - 426858.836012; //square
-    // //double spawnY = 5427935.493100 - 5427818.3064;
-    // //egoInitTransform.location.x = spawnX;
-    // //egoInitTransform.location.y = spawnY;
-    // //egoInitTransform.location.z = 3;
-    // //egoInitTransform.rotation.yaw = -180; //straight & uturn
-    // //egoInitTransform.rotation.yaw = -90; //square
+    //npc->SetAutopilot(true);
+    //world.spawnNpc(target2T)->SetAutopilot(true);
 
     // game loop
     while (!keyboardIrruption)
     {
-        auto time_point = std::chrono::steady_clock::now() + std::chrono::milliseconds(1000 / freq);
+        //auto time_point = std::chrono::steady_clock::now() + std::chrono::milliseconds(1000 / freq);
         world.tick();
-        std::this_thread::sleep_until(time_point);
+        //world.forceLaneChange(npc, 2, true);
+        //std::this_thread::sleep_until(time_point);
     }
 }
 
 int main()
 {
     signal(SIGINT, sig_handler);
-    gameLoop(50);
+    gameLoop(SIM_FREQ);
 }
