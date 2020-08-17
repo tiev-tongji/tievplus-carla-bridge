@@ -8,7 +8,7 @@
 //#define SYNC_MODE
 //#define OPT_TIME_TEST
 
-//#define HIL_MODE
+#define HIL_MODE
 //#define AUTOPILOT_MODE
 
 static const string HOST = "127.0.0.1"; // sercer host.
@@ -253,7 +253,7 @@ public:
         msgManager.pack_caninfo();
         msgManager.pack_objectlist(*carlaWorld.GetActors());
         msgManager.pack_fusionmap_raster();
-        msgManager.pack_roadmarking(map->GetWaypoint(player->GetLocation()), debugHelper, true);
+        //msgManager.pack_roadmarking(map->GetWaypoint(player->GetLocation()), debugHelper, true);
 
 #ifdef SYNC_MODE
         msgManager.publish_all();
@@ -470,8 +470,10 @@ void gameLoop(int16_t freq)
     world.setup();
 
     //cg::Transform egoT = RandomChoice(world.map->GetRecommendedSpawnPoints(), rng);
-    cg::Transform egoT = makeTransform(25.527479, 146.448837, 3.5, 0, 0.5, 0); // TOWN06 straight road with 5 lanes
-    cg::Transform egoT = makeTransform(, , 3, 0, 0, , 0);                      // TOWN03 0817
+    //cg::Transform egoT = makeTransform(25.527479, 146.448837, 3.5, 0, 0.5, 0); // TOWN06 straight road with 5 lanes
+    double spawnX = 426782.07 - 426858.836012; // UTM to UE4 coord, to find specific spawn point
+    double spawnY = 5427935.4931 - 5427818.3;
+    cg::Transform egoT = makeTransform(spawnX, spawnY, 3, 0, -90, 0); // TOWN03 0817
     world.spawnPlayer(egoT, "vehicle.tesla.model3");
     cg::Transform sensorOffset = makeTransform(0, 0, 3.5, 0, 0, 0);
     world.spawnGnss(sensorOffset);
