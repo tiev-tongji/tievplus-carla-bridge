@@ -1,7 +1,7 @@
 #include <random>
 
-#include "MessageManager.h"
-#include "PIDController.h"
+#include "MessageManager.hpp"
+#include "PIDController.hpp"
 #include <csignal>
 
 #define ASYNC_MODE

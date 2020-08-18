@@ -1,4 +1,4 @@
-#include "MessageManager.h"
+#include "MessageManager.hpp"
 
 #ifdef USE_ZCM
 void MessageManager::control_handler(const zcm::ReceiveBuffer *rbuf, const std::string &chan,
