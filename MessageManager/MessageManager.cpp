@@ -4,6 +4,7 @@
 void MessageManager::control_handler(const zcm::ReceiveBuffer *rbuf, const std::string &chan,
 									 const MsgChassisCommandSignal *msg)
 {
+	std::lock_guard<std::mutex> lock(control_mutex, std::adopt_lock);
 	CONTROL.timestamp = msg->timestamp;
 	CONTROL.autonomous_mode_control_command = msg->autonomous_mode_control_command;
 	CONTROL.car_gear_command = msg->car_gear_command;
@@ -21,6 +22,7 @@ void MessageManager::subscribe_all()
 void MessageManager::control_handler(const lcm::ReceiveBuffer *rbuf, const std::string &chan,
 									 const MsgChassisCommandSignal *msg)
 {
+	std::lock_guard<std::mutex> lock(control_mutex, std::adopt_lock);
 	CONTROL.timestamp = msg->timestamp;
 	CONTROL.autonomous_mode_control_command = msg->autonomous_mode_control_command;
 	CONTROL.car_gear_command = msg->car_gear_command;
@@ -32,9 +34,7 @@ void MessageManager::sub_loop()
 {
 	while (!_need_stop)
 	{
-		//_mutex.lock();
 		TUNNEL.handle();
-		//_mutex.unlock();
 	}
 }
 
@@ -47,18 +47,6 @@ void MessageManager::subscribe_all()
 	}
 }
 #endif
-
-void MessageManager::clear()
-{
-	_mutex.lock();
-	// clear objects in the list every epoch
-	OBJECTLIST.predicted_object.clear();
-	OBJECTLIST.object_count = 0;
-	// cache and clear map cells every epoch
-	MAP_HISTORY_CELLS = FUSIONMAP.map_cells;
-	FUSIONMAP.map_cells.assign(FUSIONMAP.map_cells.size(), MAP_ROW_0);
-	_mutex.unlock();
-}
 
 void MessageManager::publish_caninfo()
 {
@@ -105,10 +93,8 @@ void MessageManager::pub_caninfo_loop(int freq)
 	while (!_need_stop)
 	{
 		auto time_point = std::chrono::steady_clock::now() + std::chrono::milliseconds(1000 / freq);
-		_mutex.lock();
 		TUNNEL.publish("CANINFO", &CANINFO);
 		//printf("async mode: publish CANINFO\n");
-		_mutex.unlock();
 		std::this_thread::sleep_until(time_point);
 	}
 }
@@ -118,10 +104,8 @@ void MessageManager::pub_navinfo_loop(int freq)
 	while (!_need_stop)
 	{
 		auto time_point = std::chrono::steady_clock::now() + std::chrono::milliseconds(1000 / freq);
-		_mutex.lock();
 		TUNNEL.publish("NAVINFO", &NAVINFO);
 		//printf("async mode: publish NAVINFO\n");
-		_mutex.unlock();
 		std::this_thread::sleep_until(time_point);
 	}
 }
@@ -131,10 +115,8 @@ void MessageManager::pub_fusionmap_loop(int freq)
 	while (!_need_stop)
 	{
 		auto time_point = std::chrono::steady_clock::now() + std::chrono::milliseconds(1000 / freq);
-		_mutex.lock();
 		TUNNEL.publish("FUSIONMAP", &FUSIONMAP);
 		//print("async mode: publish FUSIONMAP");
-		_mutex.unlock();
 		std::this_thread::sleep_until(time_point);
 	}
 }
@@ -144,10 +126,8 @@ void MessageManager::pub_objectlist_loop(int freq)
 	while (!_need_stop)
 	{
 		auto time_point = std::chrono::steady_clock::now() + std::chrono::milliseconds(1000 / freq);
-		_mutex.lock();
 		TUNNEL.publish("PREDICTEDOBJECT", &OBJECTLIST);
 		//print("async mode: publish OBJECTLIST");
-		_mutex.unlock();
 		std::this_thread::sleep_until(time_point);
 	}
 }
@@ -157,10 +137,8 @@ void MessageManager::pub_roadmarking_loop(int freq)
 	while (!_need_stop)
 	{
 		auto time_point = std::chrono::steady_clock::now() + std::chrono::milliseconds(1000 / freq);
-		_mutex.lock();
 		TUNNEL.publish("ROADMARKINGLIST", &ROADMARKING);
 		//print("async mode: publish ROADMARKINGLIST");
-		_mutex.unlock();
 		std::this_thread::sleep_until(time_point);
 	}
 }
@@ -170,10 +148,8 @@ void MessageManager::pub_trafficlight_loop(int freq)
 	while (!_need_stop)
 	{
 		auto time_point = std::chrono::steady_clock::now() + std::chrono::milliseconds(1000 / freq);
-		_mutex.lock();
 		TUNNEL.publish("TRAFFICLIGHTSIGNAL", &TRAFFICLIGHT);
 		//print("async mode: publish TRAFFICLIGHTSIGNAL");
-		_mutex.unlock();
 		std::this_thread::sleep_until(time_point);
 	}
 }
@@ -196,7 +172,7 @@ void MessageManager::publish_all_async(int freq_caninfo, int freq_navinfo, int f
 
 void MessageManager::pack_caninfo()
 {
-	_mutex.lock();
+	std::lock_guard<std::mutex> caninfo_lock(caninfo_mutex, std::adopt_lock);
 	CANINFO.timestamp = NAVINFO.timestamp;
 
 	CANINFO.drive_mode = 0;
@@ -246,13 +222,11 @@ void MessageManager::pack_caninfo()
 	CANINFO.acceleration_x_desired = 0;
 	CANINFO.steer_wheel_angle_desired = 0;
 	CANINFO.emergency_control_state = 0;
-
-	_mutex.unlock();
 }
 
 void MessageManager::pack_navinfo(const csd::GnssMeasurement &gnssMsg)
 {
-	_mutex.lock();
+	std::lock_guard<std::mutex> navinfo_lock(navinfo_mutex, std::adopt_lock);
 
 	NAVINFO.timestamp = gnssMsg.GetTimestamp() * 1000;
 
@@ -312,8 +286,6 @@ void MessageManager::pack_navinfo(const csd::GnssMeasurement &gnssMsg)
 	NAVINFO.RTK_status = 1;
 	NAVINFO.gps_num_satellites = 11;
 	NAVINFO.is_reckoning_vaild = 1;
-
-	_mutex.unlock();
 };
 
 PredictedObject MessageManager::pack_one_object(cc::ActorPtr pActor)
@@ -421,7 +393,7 @@ PredictedObject MessageManager::pack_one_object(cc::ActorPtr pActor)
 
 void MessageManager::pack_objectlist(const cc::ActorList &actors)
 {
-	_mutex.lock();
+	std::lock_guard<std::mutex> objectlist_lock(objectlist_mutex, std::adopt_lock);
 	OBJECTLIST.time_stamp = NAVINFO.timestamp;
 	OBJECTLIST.data_source = 1;
 	OBJECTLIST.object_count = 0;
@@ -432,15 +404,9 @@ void MessageManager::pack_objectlist(const cc::ActorList &actors)
 		{
 			continue;
 		}
-		// if (start_with(actor->GetTypeId(), "sensor") || start_with(actor->GetTypeId(), "controller"))
-		// {
-		// 	continue;
-		// }
-		// if (start_with(actor->GetTypeId(), "traffic") || start_with(actor->GetTypeId(), "static"))
-		// {
-		// 	continue;
-		// }
-		if (!(start_with(actor->GetTypeId(), "vehicle") || start_with(actor->GetTypeId(), "walker")))
+		if (!(start_with(actor->GetTypeId(), "vehicle") ||
+			  start_with(actor->GetTypeId(), "walker") ||
+			  start_with(actor->GetTypeId(), "static.prop")))
 		{
 			continue;
 		}
@@ -453,13 +419,11 @@ void MessageManager::pack_objectlist(const cc::ActorList &actors)
 		OBJECTLIST.predicted_object.push_back(obj);
 		++OBJECTLIST.object_count;
 	}
-
-	_mutex.unlock();
 };
 
 void MessageManager::pack_fusionmap_raster()
 {
-	_mutex.lock();
+	std::lock_guard<std::mutex> fusionmap_lock(fusionmap_mutex, std::adopt_lock);
 
 	MAP_HISTORY_CELLS = FUSIONMAP.map_cells;
 	FUSIONMAP.map_cells.assign(MAP_ROW_NUM, MAP_ROW_0);
@@ -524,12 +488,11 @@ void MessageManager::pack_fusionmap_raster()
 		}
 		//printf("rastered points count: %d\n", rastered_point_num);
 	}
-	_mutex.unlock();
 };
 
 void MessageManager::pack_fusionmap_lidar(const csd::LidarMeasurement &lidarMsg)
 {
-	_mutex.lock();
+	std::lock_guard<std::mutex> fusionmap_lock(fusionmap_mutex, std::adopt_lock);
 
 	//auto t1 = std::chrono::steady_clock::now();
 
@@ -581,8 +544,6 @@ void MessageManager::pack_fusionmap_lidar(const csd::LidarMeasurement &lidarMsg)
 	//auto t2 = std::chrono::steady_clock::now();
 	//double dr_ms_pack_fusionmap = std::chrono::duration<double, std::milli>(t2 - t1).count();
 	//std::cout << "time to pack lidar points: " << dr_ms_pack_fusionmap << std::endl;
-
-	_mutex.unlock();
 }
 
 void visRoadmarking(cc::DebugHelper &debugHelper)
@@ -592,7 +553,7 @@ void visRoadmarking(cc::DebugHelper &debugHelper)
 
 void MessageManager::pack_roadmarking(const SharedPtr<cc::Waypoint> current, cc::DebugHelper &debugHelper, bool enableDraw)
 {
-	_mutex.lock();
+	std::lock_guard<std::mutex> roadmarking_lock(roadmarking_mutex, std::adopt_lock);
 
 	auto t1 = std::chrono::steady_clock::now();
 
@@ -601,7 +562,6 @@ void MessageManager::pack_roadmarking(const SharedPtr<cc::Waypoint> current, cc:
 
 	if (current->IsJunction())
 	{
-		_mutex.unlock();
 		return;
 	}
 
@@ -909,8 +869,6 @@ void MessageManager::pack_roadmarking(const SharedPtr<cc::Waypoint> current, cc:
 	auto t2 = std::chrono::steady_clock::now();
 	double dr_ms_pack_roadmarking = std::chrono::duration<double, std::milli>(t2 - t1).count();
 	//std::cout << "time to pack roadmarkinglist: " << dr_ms_pack_roadmarking << std::endl;
-
-	_mutex.unlock();
 }
 
 void MessageManager::pack_trafficlight()

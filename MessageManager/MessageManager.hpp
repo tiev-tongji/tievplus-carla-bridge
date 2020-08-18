@@ -293,7 +293,6 @@ public:
 	MessageManager &operator=(MessageManager const &) = delete;
 	~MessageManager()
 	{
-		_mutex.unlock();
 		_need_stop = true;
 		for (auto &t : _pub_threads)
 		{
@@ -321,8 +320,6 @@ public:
 						 const MsgChassisCommandSignal *msg);
 	void sub_loop();
 #endif
-
-	void clear();
 
 	void publish_caninfo();
 	void publish_navinfo();
@@ -380,6 +377,12 @@ private:
 #ifdef USE_LCM
 	std::vector<std::thread> _sub_threads;
 #endif
-	std::mutex _mutex;
+	std::mutex control_mutex;
+	std::mutex caninfo_mutex;
+	std::mutex navinfo_mutex;
+	std::mutex fusionmap_mutex;
+	std::mutex objectlist_mutex;
+	std::mutex roadmarking_mutex;
+	std::mutex trafficlight_mutex;
 	bool _need_stop;
 };

@@ -15,7 +15,7 @@ namespace tievsim
             return rad / M_PI * 180.0;
         }
 
-        inline double rad2deg(double deg)
+        inline double deg2rad(double deg)
         {
             return deg * M_PI / 180.0;
         }
