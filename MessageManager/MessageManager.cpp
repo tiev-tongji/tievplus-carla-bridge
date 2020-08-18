@@ -349,6 +349,8 @@ PredictedObject MessageManager::pack_one_object(cc::ActorPtr pActor)
 	predObj.trajectory_point_num = POINTS_NUM_OBJECTLIST_PREDICT;
 	predObj.trajectory_point.resize(2, std::vector<float>(POINTS_NUM_OBJECTLIST_PREDICT));
 	auto locEgo = vehState->GetTransform().location;
+	locEgo.x = locEgo.x + 2.7 * cos(deg2rad(rotEgo.yaw));
+	locEgo.y = locEgo.y + 2.7 * sin(deg2rad(rotEgo.yaw));
 	auto loc = pActor->GetTransform().location;
 	for (int i = 0; i < POINTS_NUM_OBJECTLIST_PREDICT; ++i)
 	{
@@ -590,6 +592,7 @@ void visRoadmarking(cc::DebugHelper &debugHelper)
 	;
 }
 
+// FIXME: this method is a lit bit resource-consuming, now tested to run at about 100Hz.
 void MessageManager::pack_roadmarking(const SharedPtr<cc::Waypoint> current, cc::DebugHelper &debugHelper, bool enableDraw)
 {
 	_mutex.lock();
@@ -908,7 +911,7 @@ void MessageManager::pack_roadmarking(const SharedPtr<cc::Waypoint> current, cc:
 
 	auto t2 = std::chrono::steady_clock::now();
 	double dr_ms_pack_roadmarking = std::chrono::duration<double, std::milli>(t2 - t1).count();
-	//std::cout << "time to pack roadmarkinglist: " << dr_ms_pack_roadmarking << std::endl;
+	std::cout << "time to pack roadmarkinglist: " << dr_ms_pack_roadmarking << std::endl;
 
 	_mutex.unlock();
 }

@@ -4,12 +4,12 @@
 #include "PIDController.hpp"
 #include <csignal>
 
-#define ASYNC_MODE
-//#define SYNC_MODE
+//#define ASYNC_MODE
+#define SYNC_MODE
 //#define OPT_TIME_TEST
 
-#define HIL_MODE
-//#define AUTOPILOT_MODE
+//#define HIL_MODE
+#define AUTOPILOT_MODE
 
 static const string HOST = "127.0.0.1"; // sercer host.
 static const uint16_t PORT = 2000;      // server post.
@@ -17,7 +17,7 @@ static const size_t WORKER_THREADS = 0ULL;
 static const string ZCM_URL = "udpm://239.255.76.67:7667?ttl=1";
 static const string PID_PARAMETER_FILEPATH = "../cfg/pid_parameters.json";
 static const string TOWN_NAME = "Town06";
-static const double SIM_FREQ = 50;
+static const double SIM_FREQ = 200;
 static std::mt19937_64 rng((std::random_device())());
 static volatile bool keyboardIrruption = false;
 
@@ -352,9 +352,9 @@ public:
         npcList.push_back(vehTarget);
         vehTarget->SetVelocity(cg::Vector3D{0, 0, 0});
         vehTarget->SetAngularVelocity(cg::Vector3D{0, 0, 0});
-        //auto targetInitControl = vehTarget->GetControl();
-        //targetInitControl.hand_brake = true;
-        //vehTarget->ApplyControl(targetInitControl);
+        auto targetInitControl = vehTarget->GetControl();
+        targetInitControl.hand_brake = true;
+        vehTarget->ApplyControl(targetInitControl);
         return vehTarget;
     }
 
@@ -475,7 +475,7 @@ void gameLoop(int16_t freq)
     double spawnY = 5427935.4931 - 5427818.3;
     cg::Transform egoT = makeTransform(spawnX, spawnY, 3, 0, -90, 0); // TOWN03 0817
     world.spawnPlayer(egoT, "vehicle.tesla.model3");
-    cg::Transform sensorOffset = makeTransform(0, 0, 3.5, 0, 0, 0);
+    cg::Transform sensorOffset = makeTransform(2.7, 0, 3.5, 0, 0, 0);
     world.spawnGnss(sensorOffset);
     //world.spawnLidar(sensorOffset);
     //cg::Transform target1T = makeTransformRelative(egoT, -5, 3.5, 0);
