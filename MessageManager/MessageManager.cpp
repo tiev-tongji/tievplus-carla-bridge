@@ -82,7 +82,7 @@ void MessageManager::publish_objectlist()
 
 void MessageManager::publish_roadmarking()
 {
-	TUNNEL.publish("ROADMARKINGLIST", &ROADMARKING);
+	TUNNEL.publish("ROADMARKING", &ROADMARKING);
 }
 
 void MessageManager::publish_trafficlight()
@@ -158,7 +158,7 @@ void MessageManager::pub_roadmarking_loop(int freq)
 	{
 		auto time_point = std::chrono::steady_clock::now() + std::chrono::milliseconds(1000 / freq);
 		_mutex.lock();
-		TUNNEL.publish("ROADMARKINGLIST", &ROADMARKING);
+		TUNNEL.publish("ROADMARKING", &ROADMARKING);
 		//print("async mode: publish ROADMARKINGLIST");
 		_mutex.unlock();
 		std::this_thread::sleep_until(time_point);

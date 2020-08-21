@@ -4,12 +4,12 @@
 #include "PIDController.hpp"
 #include <csignal>
 
-//#define ASYNC_MODE
-#define SYNC_MODE
+#define ASYNC_MODE
+//#define SYNC_MODE
 //#define OPT_TIME_TEST
 
-//#define HIL_MODE
-#define AUTOPILOT_MODE
+#define HIL_MODE
+//#define AUTOPILOT_MODE
 
 static const string HOST = "127.0.0.1"; // sercer host.
 static const uint16_t PORT = 2000;      // server post.
@@ -253,7 +253,7 @@ public:
         msgManager.pack_caninfo();
         msgManager.pack_objectlist(*carlaWorld.GetActors());
         msgManager.pack_fusionmap_raster();
-        //msgManager.pack_roadmarking(map->GetWaypoint(player->GetLocation()), debugHelper, true);
+        msgManager.pack_roadmarking(map->GetWaypoint(player->GetLocation()), debugHelper, true);
 
 #ifdef SYNC_MODE
         msgManager.publish_all();
