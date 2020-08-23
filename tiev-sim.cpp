@@ -17,7 +17,7 @@ static const size_t WORKER_THREADS = 0ULL;
 static const string ZCM_URL = "udpm://239.255.76.67:7667?ttl=1";
 static const string PID_PARAMETER_FILEPATH = "../cfg/pid_parameters.json";
 static const string TOWN_NAME = "Town06";
-static const double SIM_FREQ = 200;
+static const double SIM_FREQ = 50;
 static std::mt19937_64 rng((std::random_device())());
 static volatile bool keyboardIrruption = false;
 
@@ -231,10 +231,7 @@ public:
 
     void tick()
     {
-        //carlaWorld.Tick(10s);
-        carlaWorld.WaitForTick(1s);
         relocateSpectator2egoCar();
-
 #ifdef HIL_MODE
         double aimAcc = msgManager.CONTROL.longitudinal_acceleration_command;
         double vehAcc = msgManager.CANINFO.acceleration_x;
@@ -471,16 +468,19 @@ void gameLoop(int16_t freq)
 
     //cg::Transform egoT = RandomChoice(world.map->GetRecommendedSpawnPoints(), rng);
     //cg::Transform egoT = makeTransform(25.527479, 146.448837, 3.5, 0, 0.5, 0); // TOWN06 straight road with 5 lanes
-    double spawnX = 426782.07 - 426858.836012; // UTM to UE4 coord, to find specific spawn point
-    double spawnY = 5427935.4931 - 5427818.3;
-    cg::Transform egoT = makeTransform(spawnX, spawnY, 3, 0, -90, 0); // TOWN03 0817
+    //double spawnX = 426782.07 - 426858.836012; // UTM to UE4 coord, to find specific spawn point
+    //double spawnY = 5427935.4931 - 5427818.3;
+    double spawnX = 426832.5 - 426858.836012; // ./config.py --map TOWN06
+    double spawnY = 5427935.4931 - 5427957;
+    cg::Transform egoT = makeTransform(spawnX, spawnY, 3, 0, 180, 0); // TOWN03 0817
     world.spawnPlayer(egoT, "vehicle.tesla.model3");
     cg::Transform sensorOffset = makeTransform(2.7, 0, 3.5, 0, 0, 0);
     world.spawnGnss(sensorOffset);
     //world.spawnLidar(sensorOffset);
-    //cg::Transform target1T = makeTransformRelative(egoT, -5, 3.5, 0);
-    //auto npc = world.spawnNpc(target1T, "vehicle.audi.tt");
-    //cg::Transform target2T = makeTransformRelative(egoT, 60, 0, 0);
+    cg::Transform target1T = makeTransformRelative(egoT, -5, 3.5, 0);
+    auto npc1 = world.spawnNpc(target1T, "vehicle.audi.tt");
+    cg::Transform target2T = makeTransformRelative(egoT, 60, 0, 0);
+    auto npc2 = world.spawnNpc(target2T, "random");
 
     world.init();
 
@@ -490,10 +490,10 @@ void gameLoop(int16_t freq)
     // game loop
     while (!keyboardIrruption)
     {
-        //auto time_point = std::chrono::steady_clock::now() + std::chrono::milliseconds(1000 / freq);
+        auto time_point = std::chrono::steady_clock::now() + std::chrono::milliseconds(1000 / freq);
         world.tick();
         //world.forceLaneChange(npc, 2, true);
-        //std::this_thread::sleep_until(time_point);
+        std::this_thread::sleep_until(time_point);
     }
 }
 
