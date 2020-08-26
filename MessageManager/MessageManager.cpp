@@ -5,16 +5,16 @@ void MessageManager::control_handler(const zcm::ReceiveBuffer *rbuf, const std::
 									 const MsgChassisCommandSignal *msg)
 {
 	std::lock_guard<std::mutex> lock(control_mutex, std::adopt_lock);
-	CONTROL.timestamp = msg->timestamp;
-	CONTROL.autonomous_mode_control_command = msg->autonomous_mode_control_command;
-	CONTROL.car_gear_command = msg->car_gear_command;
-	CONTROL.steer_wheel_angle_command = msg->steer_wheel_angle_command;
-	CONTROL.longitudinal_acceleration_command = msg->longitudinal_acceleration_command;
+	chassis_command_.timestamp = msg->timestamp;
+	chassis_command_.autonomous_mode_control_command = msg->autonomous_mode_control_command;
+	chassis_command_.car_gear_command = msg->car_gear_command;
+	chassis_command_.steer_wheel_angle_command = msg->steer_wheel_angle_command;
+	chassis_command_.longitudinal_acceleration_command = msg->longitudinal_acceleration_command;
 }
 
 void MessageManager::subscribe_all()
 {
-	TUNNEL.start();
+	tunnel_.start();
 }
 #endif
 
@@ -23,16 +23,16 @@ void MessageManager::control_handler(const lcm::ReceiveBuffer *rbuf, const std::
 									 const MsgChassisCommandSignal *msg)
 {
 	std::lock_guard<std::mutex> lock(control_mutex, std::adopt_lock);
-	CONTROL.timestamp = msg->timestamp;
-	CONTROL.autonomous_mode_control_command = msg->autonomous_mode_control_command;
-	CONTROL.car_gear_command = msg->car_gear_command;
-	CONTROL.steer_wheel_angle_command = msg->steer_wheel_angle_command;
-	CONTROL.longitudinal_acceleration_command = msg->longitudinal_acceleration_command;
+	chassis_command_.timestamp = msg->timestamp;
+	chassis_command_.autonomous_mode_control_command = msg->autonomous_mode_control_command;
+	chassis_command_.car_gear_command = msg->car_gear_command;
+	chassis_command_.steer_wheel_angle_command = msg->steer_wheel_angle_command;
+	chassis_command_.longitudinal_acceleration_command = msg->longitudinal_acceleration_command;
 }
 
 void MessageManager::sub_loop()
 {
-	while (!_need_stop)
+	while (!need_stop_)
 	{
 		TUNNEL.handle();
 	}
@@ -50,32 +50,32 @@ void MessageManager::subscribe_all()
 
 void MessageManager::publish_caninfo()
 {
-	TUNNEL.publish("CANINFO", &CANINFO);
+	tunnel_.publish("CANINFO", &caninfo_);
 }
 
 void MessageManager::publish_navinfo()
 {
-	TUNNEL.publish("NAVINFO", &NAVINFO);
+	tunnel_.publish("NAVINFO", &navinfo_);
 }
 
 void MessageManager::publish_fusionmap()
 {
-	TUNNEL.publish("FUSIONMAP", &FUSIONMAP);
+	tunnel_.publish("FUSIONMAP", &fusionmap_);
 }
 
 void MessageManager::publish_objectlist()
 {
-	TUNNEL.publish("PREDICTEDOBJECT", &OBJECTLIST);
+	tunnel_.publish("PREDICTEDOBJECT", &object_list_);
 }
 
 void MessageManager::publish_roadmarking()
 {
-	TUNNEL.publish("ROADMARKINGLIST", &ROADMARKING);
+	tunnel_.publish("ROADMARKINGLIST", &roadmarking_list_);
 }
 
 void MessageManager::publish_trafficlight()
 {
-	TUNNEL.publish("TRAFFICLIGHTSIGNAL", &TRAFFICLIGHT);
+	tunnel_.publish("TRAFFICLIGHTSIGNAL", &trafficlight_);
 }
 
 void MessageManager::publish_all()
@@ -90,10 +90,10 @@ void MessageManager::publish_all()
 
 void MessageManager::pub_caninfo_loop(int freq)
 {
-	while (!_need_stop)
+	while (!need_stop_)
 	{
 		auto time_point = std::chrono::steady_clock::now() + std::chrono::milliseconds(1000 / freq);
-		TUNNEL.publish("CANINFO", &CANINFO);
+		tunnel_.publish("CANINFO", &caninfo_);
 		//printf("async mode: publish CANINFO\n");
 		std::this_thread::sleep_until(time_point);
 	}
@@ -101,10 +101,10 @@ void MessageManager::pub_caninfo_loop(int freq)
 
 void MessageManager::pub_navinfo_loop(int freq)
 {
-	while (!_need_stop)
+	while (!need_stop_)
 	{
 		auto time_point = std::chrono::steady_clock::now() + std::chrono::milliseconds(1000 / freq);
-		TUNNEL.publish("NAVINFO", &NAVINFO);
+		tunnel_.publish("NAVINFO", &navinfo_);
 		//printf("async mode: publish NAVINFO\n");
 		std::this_thread::sleep_until(time_point);
 	}
@@ -112,10 +112,10 @@ void MessageManager::pub_navinfo_loop(int freq)
 
 void MessageManager::pub_fusionmap_loop(int freq)
 {
-	while (!_need_stop)
+	while (!need_stop_)
 	{
 		auto time_point = std::chrono::steady_clock::now() + std::chrono::milliseconds(1000 / freq);
-		TUNNEL.publish("FUSIONMAP", &FUSIONMAP);
+		tunnel_.publish("FUSIONMAP", &fusionmap_);
 		//print("async mode: publish FUSIONMAP");
 		std::this_thread::sleep_until(time_point);
 	}
@@ -123,10 +123,10 @@ void MessageManager::pub_fusionmap_loop(int freq)
 
 void MessageManager::pub_objectlist_loop(int freq)
 {
-	while (!_need_stop)
+	while (!need_stop_)
 	{
 		auto time_point = std::chrono::steady_clock::now() + std::chrono::milliseconds(1000 / freq);
-		TUNNEL.publish("PREDICTEDOBJECT", &OBJECTLIST);
+		tunnel_.publish("PREDICTEDOBJECT", &object_list_);
 		//print("async mode: publish OBJECTLIST");
 		std::this_thread::sleep_until(time_point);
 	}
@@ -134,10 +134,10 @@ void MessageManager::pub_objectlist_loop(int freq)
 
 void MessageManager::pub_roadmarking_loop(int freq)
 {
-	while (!_need_stop)
+	while (!need_stop_)
 	{
 		auto time_point = std::chrono::steady_clock::now() + std::chrono::milliseconds(1000 / freq);
-		TUNNEL.publish("ROADMARKINGLIST", &ROADMARKING);
+		tunnel_.publish("ROADMARKINGLIST", &roadmarking_list_);
 		//print("async mode: publish ROADMARKINGLIST");
 		std::this_thread::sleep_until(time_point);
 	}
@@ -145,10 +145,10 @@ void MessageManager::pub_roadmarking_loop(int freq)
 
 void MessageManager::pub_trafficlight_loop(int freq)
 {
-	while (!_need_stop)
+	while (!need_stop_)
 	{
 		auto time_point = std::chrono::steady_clock::now() + std::chrono::milliseconds(1000 / freq);
-		TUNNEL.publish("TRAFFICLIGHTSIGNAL", &TRAFFICLIGHT);
+		tunnel_.publish("TRAFFICLIGHTSIGNAL", &trafficlight_);
 		//print("async mode: publish TRAFFICLIGHTSIGNAL");
 		std::this_thread::sleep_until(time_point);
 	}
@@ -157,14 +157,14 @@ void MessageManager::pub_trafficlight_loop(int freq)
 void MessageManager::publish_all_async(int freq_caninfo, int freq_navinfo, int freq_fusionmap,
 									   int freq_objectlist, int freq_roadmarking, int freq_trafficlight)
 {
-	_pub_threads.push_back(std::thread(&MessageManager::pub_caninfo_loop, this, freq_caninfo));
-	_pub_threads.push_back(std::thread(&MessageManager::pub_navinfo_loop, this, freq_navinfo));
-	_pub_threads.push_back(std::thread(&MessageManager::pub_objectlist_loop, this, freq_objectlist));
-	_pub_threads.push_back(std::thread(&MessageManager::pub_fusionmap_loop, this, freq_fusionmap));
-	_pub_threads.push_back(std::thread(&MessageManager::pub_roadmarking_loop, this, freq_roadmarking));
-	_pub_threads.push_back(std::thread(&MessageManager::pub_trafficlight_loop, this, freq_trafficlight));
+	pub_threads_.push_back(std::thread(&MessageManager::pub_caninfo_loop, this, freq_caninfo));
+	pub_threads_.push_back(std::thread(&MessageManager::pub_navinfo_loop, this, freq_navinfo));
+	pub_threads_.push_back(std::thread(&MessageManager::pub_objectlist_loop, this, freq_objectlist));
+	pub_threads_.push_back(std::thread(&MessageManager::pub_fusionmap_loop, this, freq_fusionmap));
+	pub_threads_.push_back(std::thread(&MessageManager::pub_roadmarking_loop, this, freq_roadmarking));
+	pub_threads_.push_back(std::thread(&MessageManager::pub_trafficlight_loop, this, freq_trafficlight));
 
-	for (auto &t : _pub_threads)
+	for (auto &t : pub_threads_)
 	{
 		t.detach();
 	}
@@ -173,62 +173,62 @@ void MessageManager::publish_all_async(int freq_caninfo, int freq_navinfo, int f
 void MessageManager::pack_caninfo()
 {
 	std::lock_guard<std::mutex> caninfo_lock(caninfo_mutex, std::adopt_lock);
-	CANINFO.timestamp = NAVINFO.timestamp;
+	caninfo_.timestamp = navinfo_.timestamp;
 
-	CANINFO.drive_mode = 0;
-	CANINFO.epb_mode = 0;
-	CANINFO.eps_mode = 0;
-	CANINFO.esp_mode = 0;
-	CANINFO.gear_mode = 0;
-	CANINFO.motor_mode = 0;
-	CANINFO.eps_permission = 0;
-	CANINFO.esp_permission = 0;
-	CANINFO.epb_state = 0;
+	caninfo_.drive_mode = 0;
+	caninfo_.epb_mode = 0;
+	caninfo_.eps_mode = 0;
+	caninfo_.esp_mode = 0;
+	caninfo_.gear_mode = 0;
+	caninfo_.motor_mode = 0;
+	caninfo_.eps_permission = 0;
+	caninfo_.esp_permission = 0;
+	caninfo_.epb_state = 0;
 
 	if (vehState->GetControl().hand_brake)
-		CANINFO.gear_state = 1;
+		caninfo_.gear_state = 1;
 	else if (vehState->GetControl().reverse)
-		CANINFO.gear_state = 2;
+		caninfo_.gear_state = 2;
 	else
-		CANINFO.gear_state = 4;
+		caninfo_.gear_state = 4;
 
 	auto vel = vehState->GetVelocity();
-	CANINFO.velocity = mps2kph(norm2(vel.x, vel.y));
-	CANINFO.wheel_speed_fl = 0;
-	CANINFO.wheel_speed_fr = 0;
-	CANINFO.wheel_speed_rl = 0;
-	CANINFO.wheel_speed_rr = 0;
+	caninfo_.velocity = mps2kph(norm2(vel.x, vel.y));
+	caninfo_.wheel_speed_fl = 0;
+	caninfo_.wheel_speed_fr = 0;
+	caninfo_.wheel_speed_rl = 0;
+	caninfo_.wheel_speed_rr = 0;
 
-	CANINFO.yaw_rate = deg2rad(-vehState->GetAngularVelocity().z);
+	caninfo_.yaw_rate = deg2rad(-vehState->GetAngularVelocity().z);
 
 	auto acc = vehState->GetAcceleration();
 	double yaw = deg2rad(vehState->GetTransform().rotation.yaw);
-	CANINFO.acceleration_x = acc.x * cos(yaw) + acc.y * sin(yaw);
-	CANINFO.acceleration_y = acc.x * sin(yaw) - acc.y * cos(yaw);
+	caninfo_.acceleration_x = acc.x * cos(yaw) + acc.y * sin(yaw);
+	caninfo_.acceleration_y = acc.x * sin(yaw) - acc.y * cos(yaw);
 	//std::cout << "accX: " << CANINFO.acceleration_x << " || accY: " << CANINFO.acceleration_y << std::endl;
 
-	CANINFO.steer_wheel_angle = -vehState->GetControl().steer * MAX_STEERINGWHEEL;
-	CANINFO.steer_angular_speed = 0;
+	caninfo_.steer_wheel_angle = -vehState->GetControl().steer * MAX_STEERINGWHEEL;
+	caninfo_.steer_angular_speed = 0;
 
-	CANINFO.motor_torque = 0;
-	CANINFO.brake_deepness = vehState->GetControl().brake;
-	CANINFO.accelerate_deepness = vehState->GetControl().throttle;
-	CANINFO.brake_pedal_state = vehState->GetControl().brake == 0 ? 0 : 1;
+	caninfo_.motor_torque = 0;
+	caninfo_.brake_deepness = vehState->GetControl().brake;
+	caninfo_.accelerate_deepness = vehState->GetControl().throttle;
+	caninfo_.brake_pedal_state = vehState->GetControl().brake == 0 ? 0 : 1;
 
-	CANINFO.lamp_turn_l = 0;
-	CANINFO.lamp_turn_r = 0;
-	CANINFO.lamp_brake = 0;
+	caninfo_.lamp_turn_l = 0;
+	caninfo_.lamp_turn_r = 0;
+	caninfo_.lamp_brake = 0;
 
-	CANINFO.acceleration_x_desired = 0;
-	CANINFO.steer_wheel_angle_desired = 0;
-	CANINFO.emergency_control_state = 0;
+	caninfo_.acceleration_x_desired = 0;
+	caninfo_.steer_wheel_angle_desired = 0;
+	caninfo_.emergency_control_state = 0;
 }
 
 void MessageManager::pack_navinfo(const csd::GnssMeasurement &gnssMsg)
 {
 	std::lock_guard<std::mutex> navinfo_lock(navinfo_mutex, std::adopt_lock);
 
-	NAVINFO.timestamp = gnssMsg.GetTimestamp() * 1000;
+	navinfo_.timestamp = gnssMsg.GetTimestamp() * 1000;
 
 	auto loc = vehState->GetTransform().location;
 	auto rot = vehState->GetTransform().rotation;
@@ -242,16 +242,16 @@ void MessageManager::pack_navinfo(const csd::GnssMeasurement &gnssMsg)
 	// NAVINFO.longitude = coord.Longitude();
 	// NAVINFO.altitude = gnssMsg.GetAltitude();
 
-	NAVINFO.latitude = gnssMsg.GetLatitude();
-	NAVINFO.longitude = gnssMsg.GetLongitude();
-	NAVINFO.altitude = gnssMsg.GetAltitude();
-	coord.Reset(NAVINFO.latitude, NAVINFO.longitude);
-	NAVINFO.utm_x = coord.Easting();
-	NAVINFO.utm_y = coord.Northing();
+	navinfo_.latitude = gnssMsg.GetLatitude();
+	navinfo_.longitude = gnssMsg.GetLongitude();
+	navinfo_.altitude = gnssMsg.GetAltitude();
+	coord.Reset(navinfo_.latitude, navinfo_.longitude);
+	navinfo_.utm_x = coord.Easting();
+	navinfo_.utm_y = coord.Northing();
 
 	//printf("UE4 position: (%f, %f, %f, %f, %f, %f)\n", loc.x, loc.y, loc.z, rot.roll, rot.pitch, rot.yaw);
-	//printf("GPS: (%f, %f)\n", NAVINFO.latitude, NAVINFO.longitude);
-	//printf("error: (%f, %f)\n", NAVINFO.utm_x - loc.x, NAVINFO.utm_y + loc.y);
+	//printf("GPS: (%f, %f)\n", navinfo_.latitude, navinfo_.longitude);
+	//printf("error: (%f, %f)\n", navinfo_.utm_x - loc.x, navinfo_.utm_y + loc.y);
 
 	// rotation
 	/*
@@ -265,27 +265,27 @@ void MessageManager::pack_navinfo(const csd::GnssMeasurement &gnssMsg)
 		heading = heading + 360;
 	else if (heading > 180)
 		heading = heading - 360;
-	NAVINFO.angle_head = deg2rad(heading);
-	NAVINFO.angle_pitch = rot.pitch;
-	NAVINFO.angle_roll = rot.roll;
+	navinfo_.angle_head = deg2rad(heading);
+	navinfo_.angle_pitch = rot.pitch;
+	navinfo_.angle_roll = rot.roll;
 	auto rot_vel = vehState->GetAngularVelocity();
-	NAVINFO.angular_vel_z = deg2rad(-rot_vel.z);
+	navinfo_.angular_vel_z = deg2rad(-rot_vel.z);
 
 	// speed, velocity, acceleration
 	// TODO:rear axle to front axle
 	auto vel = vehState->GetVelocity();
-	NAVINFO.speed = norm2(vel.x, vel.y);
-	NAVINFO.velocity_east = vel.x;
-	NAVINFO.velocity_north = -vel.y; // East-South-Up coordinate in Carla.
-	NAVINFO.acceleration_x = CANINFO.acceleration_x;
-	NAVINFO.acceleration_y = CANINFO.acceleration_y;
+	navinfo_.speed = norm2(vel.x, vel.y);
+	navinfo_.velocity_east = vel.x;
+	navinfo_.velocity_north = -vel.y; // East-South-Up coordinate in Carla.
+	navinfo_.acceleration_x = caninfo_.acceleration_x;
+	navinfo_.acceleration_y = caninfo_.acceleration_y;
 
 	//status
-	NAVINFO.curvature = 0;
-	NAVINFO.HPOS_accuracy = 0.01;
-	NAVINFO.RTK_status = 1;
-	NAVINFO.gps_num_satellites = 11;
-	NAVINFO.is_reckoning_vaild = 1;
+	navinfo_.curvature = 0;
+	navinfo_.HPOS_accuracy = 0.01;
+	navinfo_.RTK_status = 1;
+	navinfo_.gps_num_satellites = 11;
+	navinfo_.is_reckoning_vaild = 1;
 };
 
 PredictedObject MessageManager::pack_one_object(cc::ActorPtr pActor)
@@ -394,10 +394,10 @@ PredictedObject MessageManager::pack_one_object(cc::ActorPtr pActor)
 void MessageManager::pack_objectlist(const cc::ActorList &actors)
 {
 	std::lock_guard<std::mutex> objectlist_lock(objectlist_mutex, std::adopt_lock);
-	OBJECTLIST.time_stamp = NAVINFO.timestamp;
-	OBJECTLIST.data_source = 1;
-	OBJECTLIST.object_count = 0;
-	OBJECTLIST.predicted_object.clear();
+	object_list_.time_stamp = navinfo_.timestamp;
+	object_list_.data_source = 1;
+	object_list_.object_count = 0;
+	object_list_.predicted_object.clear();
 	for (auto actor : actors)
 	{
 		if (actor->GetId() == vehState->GetId())
@@ -416,8 +416,8 @@ void MessageManager::pack_objectlist(const cc::ActorList &actors)
 		}
 
 		auto obj = pack_one_object(actor);
-		OBJECTLIST.predicted_object.push_back(obj);
-		++OBJECTLIST.object_count;
+		object_list_.predicted_object.push_back(obj);
+		++object_list_.object_count;
 	}
 };
 
@@ -425,20 +425,20 @@ void MessageManager::pack_fusionmap_raster()
 {
 	std::lock_guard<std::mutex> fusionmap_lock(fusionmap_mutex, std::adopt_lock);
 
-	MAP_HISTORY_CELLS = FUSIONMAP.map_cells;
-	FUSIONMAP.map_cells.assign(MAP_ROW_NUM, MAP_ROW_0);
+	MAP_HISTORY_CELLS = fusionmap_.map_cells;
+	fusionmap_.map_cells.assign(MAP_ROW_NUM, MAP_ROW_0);
 
-	FUSIONMAP.time_stamp = NAVINFO.timestamp;
-	FUSIONMAP.car_utm_position_x = NAVINFO.utm_x;
-	FUSIONMAP.car_utm_position_y = NAVINFO.utm_y;
-	FUSIONMAP.car_heading = NAVINFO.angle_head;
-	FUSIONMAP.map_resolution = FUSIONMAP_RESOLUTION;
-	FUSIONMAP.map_row_num = MAP_ROW_NUM;
-	FUSIONMAP.map_column_num = MAP_COLUMN_NUM;
-	FUSIONMAP.car_center_column = MAP_CENTER_COLUMN;
-	FUSIONMAP.car_center_row = MAP_CENTER_ROW;
+	fusionmap_.time_stamp = navinfo_.timestamp;
+	fusionmap_.car_utm_position_x = navinfo_.utm_x;
+	fusionmap_.car_utm_position_y = navinfo_.utm_y;
+	fusionmap_.car_heading = navinfo_.angle_head;
+	fusionmap_.map_resolution = FUSIONMAP_RESOLUTION;
+	fusionmap_.map_row_num = MAP_ROW_NUM;
+	fusionmap_.map_column_num = MAP_COLUMN_NUM;
+	fusionmap_.car_center_column = MAP_CENTER_COLUMN;
+	fusionmap_.car_center_row = MAP_CENTER_ROW;
 
-	for (auto &obj : OBJECTLIST.predicted_object)
+	for (auto &obj : object_list_.predicted_object)
 	{
 		auto box = obj.bounding_box;
 		// calculate rasterize zoom
@@ -446,15 +446,15 @@ void MessageManager::pack_fusionmap_raster()
 		float right = box[1][2] < box[1][3] ? box[1][2] : box[1][3];
 		float bottom = box[0][1] < box[0][3] ? box[0][1] : box[0][3];
 		float top = box[0][0] > box[0][2] ? box[0][0] : box[0][2];
-		int16_t leftCell = -ceil(left / FUSIONMAP.map_resolution) + FUSIONMAP.car_center_column;
-		int16_t rightCell = -floor(right / FUSIONMAP.map_resolution) + FUSIONMAP.car_center_column;
-		int16_t bottomCell = FUSIONMAP.car_center_row - floor(bottom / FUSIONMAP.map_resolution);
-		int16_t topCell = FUSIONMAP.car_center_row - ceil(top / FUSIONMAP.map_resolution);
+		int16_t leftCell = -ceil(left / fusionmap_.map_resolution) + fusionmap_.car_center_column;
+		int16_t rightCell = -floor(right / fusionmap_.map_resolution) + fusionmap_.car_center_column;
+		int16_t bottomCell = fusionmap_.car_center_row - floor(bottom / fusionmap_.map_resolution);
+		int16_t topCell = fusionmap_.car_center_row - ceil(top / fusionmap_.map_resolution);
 		// front x, right y
 		int16_t ymin = leftCell > -1 ? leftCell : 0;
-		int16_t ymax = rightCell < FUSIONMAP.map_column_num ? rightCell : (FUSIONMAP.map_column_num - 1);
+		int16_t ymax = rightCell < fusionmap_.map_column_num ? rightCell : (fusionmap_.map_column_num - 1);
 		int16_t xmin = topCell > -1 ? topCell : 0;
-		int16_t xmax = bottomCell < FUSIONMAP.map_row_num ? bottomCell : (FUSIONMAP.map_row_num - 1);
+		int16_t xmax = bottomCell < fusionmap_.map_row_num ? bottomCell : (fusionmap_.map_row_num - 1);
 
 		// rasterize obstacles into map cells
 		int16_t x = xmin;
@@ -467,20 +467,20 @@ void MessageManager::pack_fusionmap_raster()
 			y = ymin;
 			while (y <= ymax)
 			{
-				double posY = -(y - FUSIONMAP.car_center_column) * FUSIONMAP.map_resolution;
-				double posX = (FUSIONMAP.car_center_row - x) * FUSIONMAP.map_resolution;
+				double posY = -(y - fusionmap_.car_center_column) * fusionmap_.map_resolution;
+				double posX = (fusionmap_.car_center_row - x) * fusionmap_.map_resolution;
 				bool isOccupied = in_area_test(posX, posY, obj);
 				if (isOccupied)
 				{
 					// bit-0 history obstacle, bit-1 lidar obstacle, bit-2 moving obstacle
-					FUSIONMAP.map_cells[x][y] |= 0b00000010;
+					fusionmap_.map_cells[x][y] |= 0b00000010;
 					++rastered_point_num;
 					bool isHistory = true;
 					bool isMoving = (fabs(obj.velocity) > 100);
 					if (isHistory)
-						FUSIONMAP.map_cells[x][y] |= 0b00000001;
+						fusionmap_.map_cells[x][y] |= 0b00000001;
 					if (isMoving)
-						FUSIONMAP.map_cells[x][y] |= 0b00000100;
+						fusionmap_.map_cells[x][y] |= 0b00000100;
 				}
 				++y;
 			}
@@ -496,7 +496,7 @@ void MessageManager::pack_fusionmap_lidar(const csd::LidarMeasurement &lidarMsg)
 
 	//auto t1 = std::chrono::steady_clock::now();
 
-	double duration = lidarMsg.GetTimestamp() * 1000 - FUSIONMAP.time_stamp;
+	double duration = lidarMsg.GetTimestamp() * 1000 - fusionmap_.time_stamp;
 	if (duration < 1000 / LIDAR_ROTATE_FREQUENCY)
 	{
 
@@ -520,18 +520,18 @@ void MessageManager::pack_fusionmap_lidar(const csd::LidarMeasurement &lidarMsg)
 		}
 		pcdRawData.clear();
 
-		MAP_HISTORY_CELLS = FUSIONMAP.map_cells;
-		FUSIONMAP.map_cells.assign(MAP_ROW_NUM, MAP_ROW_0);
+		MAP_HISTORY_CELLS = fusionmap_.map_cells;
+		fusionmap_.map_cells.assign(MAP_ROW_NUM, MAP_ROW_0);
 
-		FUSIONMAP.time_stamp = lidarMsg.GetTimestamp() * 1000;
-		FUSIONMAP.car_utm_position_x = NAVINFO.utm_x;
-		FUSIONMAP.car_utm_position_y = NAVINFO.utm_y;
-		FUSIONMAP.car_heading = NAVINFO.angle_head;
-		FUSIONMAP.map_resolution = FUSIONMAP_RESOLUTION;
-		FUSIONMAP.map_row_num = MAP_ROW_NUM;
-		FUSIONMAP.map_column_num = MAP_COLUMN_NUM;
-		FUSIONMAP.car_center_column = MAP_CENTER_COLUMN;
-		FUSIONMAP.car_center_row = MAP_CENTER_ROW;
+		fusionmap_.time_stamp = lidarMsg.GetTimestamp() * 1000;
+		fusionmap_.car_utm_position_x = navinfo_.utm_x;
+		fusionmap_.car_utm_position_y = navinfo_.utm_y;
+		fusionmap_.car_heading = navinfo_.angle_head;
+		fusionmap_.map_resolution = FUSIONMAP_RESOLUTION;
+		fusionmap_.map_row_num = MAP_ROW_NUM;
+		fusionmap_.map_column_num = MAP_COLUMN_NUM;
+		fusionmap_.car_center_column = MAP_CENTER_COLUMN;
+		fusionmap_.car_center_row = MAP_CENTER_ROW;
 
 		points *= 1 / FUSIONMAP_RESOLUTION;
 
@@ -657,8 +657,8 @@ void MessageManager::pack_roadmarking(const SharedPtr<cc::Waypoint> current, cc:
 			//		  << " right: " << lineType2string(right->GetRightLaneMarking()->type) << std::endl;
 		}
 	}
-	ROADMARKING.current_lane_id = numRightLane;
-	ROADMARKING.num = numRightLane + numLeftLane + 1;
+	roadmarking_list_.current_lane_id = numRightLane;
+	roadmarking_list_.num = numRightLane + numLeftLane + 1;
 
 	for (auto wp : slice)
 	{
@@ -838,33 +838,33 @@ void MessageManager::pack_roadmarking(const SharedPtr<cc::Waypoint> current, cc:
 		lineR.num = waypoints.size();
 		lane.left_line = lineL;
 		lane.right_line = lineR;
-		ROADMARKING.lanes.push_back(lane);
+		roadmarking_list_.lanes.push_back(lane);
 	}
 
-	ROADMARKING.stop_line.exist = 0;
-	ROADMARKING.stop_line.num = 1;
-	ROADMARKING.stop_line.stop_points.push_back(LinePoint{});
-	ROADMARKING.stop_line.distance = -1;
+	roadmarking_list_.stop_line.exist = 0;
+	roadmarking_list_.stop_line.num = 1;
+	roadmarking_list_.stop_line.stop_points.push_back(LinePoint{});
+	roadmarking_list_.stop_line.distance = -1;
 
-	ROADMARKING.zebra.exist = 0;
-	ROADMARKING.zebra.num = 1;
-	ROADMARKING.zebra.zebra_points.push_back(LinePoint{});
-	ROADMARKING.zebra.distance = -1;
+	roadmarking_list_.zebra.exist = 0;
+	roadmarking_list_.zebra.num = 1;
+	roadmarking_list_.zebra.zebra_points.push_back(LinePoint{});
+	roadmarking_list_.zebra.distance = -1;
 
-	ROADMARKING.curb.exist = 0;
-	ROADMARKING.curb.num = 1;
-	ROADMARKING.curb.curb_points.push_back(LinePoint{});
-	ROADMARKING.curb.distance = -1;
+	roadmarking_list_.curb.exist = 0;
+	roadmarking_list_.curb.num = 1;
+	roadmarking_list_.curb.curb_points.push_back(LinePoint{});
+	roadmarking_list_.curb.distance = -1;
 
-	ROADMARKING.no_parking.exist = 0;
-	ROADMARKING.no_parking.num = 1;
-	ROADMARKING.no_parking.no_parking_points.push_back(LinePoint{});
-	ROADMARKING.no_parking.distance = -1;
+	roadmarking_list_.no_parking.exist = 0;
+	roadmarking_list_.no_parking.num = 1;
+	roadmarking_list_.no_parking.no_parking_points.push_back(LinePoint{});
+	roadmarking_list_.no_parking.distance = -1;
 
-	ROADMARKING.chevron.exist = 0;
-	ROADMARKING.chevron.num = 1;
-	ROADMARKING.chevron.chevron_points.push_back(LinePoint{});
-	ROADMARKING.chevron.distance = -1;
+	roadmarking_list_.chevron.exist = 0;
+	roadmarking_list_.chevron.num = 1;
+	roadmarking_list_.chevron.chevron_points.push_back(LinePoint{});
+	roadmarking_list_.chevron.distance = -1;
 
 	auto t2 = std::chrono::steady_clock::now();
 	double dr_ms_pack_roadmarking = std::chrono::duration<double, std::milli>(t2 - t1).count();

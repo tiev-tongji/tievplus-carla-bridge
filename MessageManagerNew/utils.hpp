@@ -2,7 +2,10 @@
 #include <vector>
 #include <string>
 #include <list>
+#include <string>
 #include <cmath>
+
+#include "carla/geom/Transform.h"
 
 namespace tievsim
 {
@@ -42,6 +45,27 @@ namespace tievsim
         }
 
         // geometry
+        carla::geom::Location rel2abs(const carla::geom::Transform &origin,
+                                      const carla::geom::Location &offset,
+                                      bool y_axis_bind_left = false)
+        {
+            float yaw = deg2rad(origin.rotation.yaw);
+            float x = origin.location.x + cos(yaw) * offset.x;
+            float y = origin.location.y + sin(yaw) * offset.x;
+            if (y_axis_bind_left)
+            {
+                x += sin(yaw) * offset.y;
+                y -= cos(yaw) * offset.y;
+            }
+            else
+            {
+                x -= sin(yaw) * offset.y;
+                y += cos(yaw) * offset.y;
+            }
+            float z = origin.location.z + offset.z;
+            return carla::geom::Location{x, y, z};
+        }
+
         enum GeoOrientation
         {
             East,

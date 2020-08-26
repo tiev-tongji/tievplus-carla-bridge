@@ -284,17 +284,17 @@ inline const string lineType2string(carla::road::element::LaneMarking::Type type
 class MessageManager
 {
 public:
-	MessageManager(std::string url) : TUNNEL(url), _need_stop(false)
+	MessageManager(std::string url) : tunnel_(url), need_stop_(false)
 	{
-		CONTROL.car_gear_command = 4;
+		chassis_command_.car_gear_command = 4;
 	};
-	MessageManager() : _need_stop(false){};
+	MessageManager() : need_stop_(false){};
 	MessageManager(MessageManager const &) = delete;
 	MessageManager &operator=(MessageManager const &) = delete;
 	~MessageManager()
 	{
-		_need_stop = true;
-		for (auto &t : _pub_threads)
+		need_stop_ = true;
+		for (auto &t : pub_threads_)
 		{
 			if (t.joinable())
 				t.join();
@@ -307,7 +307,7 @@ public:
 		}
 #endif
 #ifdef USE_ZCM
-		TUNNEL.stop();
+		tunnel_.stop();
 #endif
 	};
 
@@ -354,26 +354,26 @@ private:
 
 public:
 #ifdef USE_ZCM
-	zcm::ZCM TUNNEL;
+	zcm::ZCM tunnel_;
 #endif
 #ifdef USE_LCM
-	lcm::LCM TUNNEL;
+	lcm::LCM tunnel_;
 #endif
 
-	MsgChassisCommandSignal CONTROL;
-	MsgCanInfoSignal CANINFO;
-	MsgNavInfoSignal NAVINFO;
-	MsgFusionMap FUSIONMAP;
-	MsgPredictedObjectTrajectoryList OBJECTLIST;
-	MsgRoadMarkingList ROADMARKING;
-	MsgTrafficLightSignal TRAFFICLIGHT;
+	MsgChassisCommandSignal chassis_command_;
+	MsgCanInfoSignal caninfo_;
+	MsgNavInfoSignal navinfo_;
+	MsgFusionMap fusionmap_;
+	MsgPredictedObjectTrajectoryList object_list_;
+	MsgRoadMarkingList roadmarking_list_;
+	MsgTrafficLightSignal trafficlight_;
 	GeographicLib::GeoCoords coord;
 	vector<vector<uint8_t>> MAP_HISTORY_CELLS; // to cache fusionmap cells of the previous frame.
 	SharedPtr<cc::Vehicle> vehState;		   // to cache ego car's state from carla, designed for sensor callback in carla.
 	vector<vector<float>> pcdRawData;
 
 private:
-	std::vector<std::thread> _pub_threads;
+	std::vector<std::thread> pub_threads_;
 #ifdef USE_LCM
 	std::vector<std::thread> _sub_threads;
 #endif
@@ -384,5 +384,5 @@ private:
 	std::mutex objectlist_mutex;
 	std::mutex roadmarking_mutex;
 	std::mutex trafficlight_mutex;
-	bool _need_stop;
+	bool need_stop_;
 };

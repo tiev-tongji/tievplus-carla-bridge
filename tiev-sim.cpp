@@ -136,7 +136,7 @@ public:
     void initMessager()
     {
         msgManager.vehState = player; // msgManager need ego car's state to pack tiev msgs.
-        msgManager.TUNNEL.subscribe("MsgChassisCommandSignal", &MessageManager::control_handler, &msgManager);
+        msgManager.tunnel_.subscribe("MsgChassisCommandSignal", &MessageManager::control_handler, &msgManager);
         msgManager.subscribe_all();
 #ifdef ASYNC_MODE
         msgManager.publish_all_async(100, 100, 20, 20, 20, 20);
@@ -236,17 +236,17 @@ public:
         relocateSpectator2egoCar();
 
 #ifdef HIL_MODE
-        double aimAcc = msgManager.CONTROL.longitudinal_acceleration_command;
-        double vehAcc = msgManager.CANINFO.acceleration_x;
-        double aimSteer = -msgManager.CONTROL.steer_wheel_angle_command;
-        double vehSteer = -msgManager.CANINFO.steer_wheel_angle;
+        double aimAcc = msgManager.chassis_command_.longitudinal_acceleration_command;
+        double vehAcc = msgManager.caninfo_.acceleration_x;
+        double aimSteer = -msgManager.chassis_command_.steer_wheel_angle_command;
+        double vehSteer = -msgManager.caninfo_.steer_wheel_angle;
         pidController.tick(aimAcc, aimSteer, vehAcc, vehSteer, true);
         control.brake = pidController.control.brake;
         control.throttle = pidController.control.throttle;
         control.steer = pidController.control.steer;
 
-        control.reverse = msgManager.CONTROL.car_gear_command == 2;
-        control.hand_brake = msgManager.CONTROL.car_gear_command == 1;
+        control.reverse = msgManager.chassis_command_.car_gear_command == 2;
+        control.hand_brake = msgManager.chassis_command_.car_gear_command == 1;
         player->ApplyControl(control);
 #endif
 

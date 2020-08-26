@@ -20,6 +20,7 @@ link_directories (${CMAKE_SOURCE_DIR}/../PythonAPI/carla/dependencies/lib)
 # add sub-target directories
 add_subdirectory ("${CMAKE_SOURCE_DIR}/PIDController")
 add_subdirectory ("${CMAKE_SOURCE_DIR}/MessageManager")
+add_subdirectory ("${CMAKE_SOURCE_DIR}/MessageManagerNew")
 
 # compile
 add_executable (tiev-sim "tiev-sim.cpp")
