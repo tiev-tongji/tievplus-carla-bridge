@@ -374,6 +374,7 @@ public:
 	vector<vector<uint8_t>> MAP_HISTORY_CELLS; // to cache fusionmap cells of the previous frame.
 	SharedPtr<cc::Vehicle> vehState;		   // to cache ego car's state from carla, designed for sensor callback in carla.
 	vector<vector<float>> pcdRawData;
+	//SharedPtr<cc::Sensor> lidarState;
 
 private:
 	std::vector<std::thread> _pub_threads;

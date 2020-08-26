@@ -136,6 +136,8 @@ public:
     void initMessager()
     {
         msgManager.vehState = player; // msgManager need ego car's state to pack tiev msgs.
+        std::cout << "sensor nums " << sensorList.size() << std::endl;
+        //msgManager.lidarState = sensorList[1];
         msgManager.TUNNEL.subscribe("MsgChassisCommandSignal", &MessageManager::control_handler, &msgManager);
         msgManager.subscribe_all();
 #ifdef ASYNC_MODE
@@ -470,20 +472,23 @@ void gameLoop(int16_t freq)
     //cg::Transform egoT = makeTransform(25.527479, 146.448837, 3.5, 0, 0.5, 0); // TOWN06 straight road with 5 lanes
     //double spawnX = 426782.07 - 426858.836012; // UTM to UE4 coord, to find specific spawn point
     //double spawnY = 5427935.4931 - 5427818.3;
-    double spawnX = 426832.5 - 426858.836012; // ./config.py --map TOWN06
-    double spawnY = 5427935.4931 - 5427957;
+    double spawnX = 426838.6 - 426858.836012; // ./config.py --map TOWN06
+    double spawnY = 5427935.4931 - 5427957.1;
     cg::Transform egoT = makeTransform(spawnX, spawnY, 3, 0, 180, 0); // TOWN03 0817
     world.spawnPlayer(egoT, "vehicle.tesla.model3");
     cg::Transform sensorOffset = makeTransform(2.7, 0, 3.5, 0, 0, 0);
     world.spawnGnss(sensorOffset);
-    //world.spawnLidar(sensorOffset);
-    cg::Transform target1T = makeTransformRelative(egoT, -5, 3.5, 0);
+    auto lidar = world.spawnLidar(sensorOffset);
+    //world.msgManager.lidarState = lidar;
+    cg::Transform target1T = makeTransformRelative(egoT, 50, 0, 0);
     auto npc1 = world.spawnNpc(target1T, "vehicle.audi.tt");
-    cg::Transform target2T = makeTransformRelative(egoT, 60, 0, 0);
-    auto npc2 = world.spawnNpc(target2T, "random");
+    //    cg::Transform target2T = makeTransformRelative(egoT, 60, 3.5, 0);
+    //    auto npc2 = world.spawnNpc(target2T, "random");
+    // npc2->SetAutopilot();
 
     world.init();
 
+    PIDController npc1_pid(PID_PARAMETER_FILEPATH);
     //npc->SetAutopilot(true);
     //world.spawnNpc(target2T)->SetAutopilot(true);
 
@@ -492,6 +497,16 @@ void gameLoop(int16_t freq)
     {
         auto time_point = std::chrono::steady_clock::now() + std::chrono::milliseconds(1000 / freq);
         world.tick();
+        //dynamic obstacle
+        // auto vel = npc1->GetVelocity();
+        // double npc1_speed = norm2(vel.x, vel.y, vel.z);
+        // npc1_pid.tick(2.0, 0, npc1_speed, 0, true);
+        // auto npc1_control = npc1->GetControl();
+        // npc1_control.throttle = npc1_pid.control.throttle;
+        // npc1_control.brake = npc1_pid.control.brake;
+        // npc1_control.hand_brake = false;
+        // npc1_control.steer = 0;
+        // npc1->ApplyControl(npc1_control);
         //world.forceLaneChange(npc, 2, true);
         std::this_thread::sleep_until(time_point);
     }

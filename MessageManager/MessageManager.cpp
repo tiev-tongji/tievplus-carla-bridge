@@ -552,13 +552,6 @@ void MessageManager::pack_fusionmap_lidar(const csd::LidarMeasurement &lidarMsg)
 	}
 	else
 	{
-		Eigen::Matrix3Xf points(3, pcdRawData.size());
-		for (size_t i = 0; i < pcdRawData.size(); ++i)
-		{
-			points.col(i) = Eigen::Vector3f::Map(&pcdRawData[i][0], pcdRawData[i].size());
-		}
-		pcdRawData.clear();
-
 		MAP_HISTORY_CELLS = FUSIONMAP.map_cells;
 		FUSIONMAP.map_cells.assign(MAP_ROW_NUM, MAP_ROW_0);
 
@@ -572,12 +565,19 @@ void MessageManager::pack_fusionmap_lidar(const csd::LidarMeasurement &lidarMsg)
 		FUSIONMAP.car_center_column = MAP_CENTER_COLUMN;
 		FUSIONMAP.car_center_row = MAP_CENTER_ROW;
 
-		points *= 1 / FUSIONMAP_RESOLUTION;
-
+		// auto egoT = vehState->GetTransform();
+		// auto lidarT = lidarState->GetTransform();
+		// printf("ego car transform: (%f,%f,%f,%f)\n", egoT.location.x, egoT.location.y, egoT.location.z, egoT.rotation.yaw);
+		// printf("lidar transform: (%f,%f,%f,%f)\n", lidarT.location.x, lidarT.location.y, lidarT.location.z, lidarT.rotation.yaw);
 		for (size_t i = 0; i < pcdRawData.size(); ++i)
 		{
-			;
+			float x = pcdRawData[i][0];
+			float y = pcdRawData[i][1];
+			float z = pcdRawData[i][2];
+
+			//printf("lidar points %d: (%f,%f,%f)\n", i, x, y, z);
 		}
+		pcdRawData.clear();
 	}
 
 	//auto t2 = std::chrono::steady_clock::now();
@@ -601,6 +601,9 @@ void MessageManager::pack_roadmarking(const SharedPtr<cc::Waypoint> current, cc:
 
 	typedef carla::road::element::LaneMarking::LaneChange LaneChange;
 	typedef carla::road::element::LaneMarking::Type LaneLineType;
+
+	ROADMARKING.lanes.clear();
+	ROADMARKING.num = 0;
 
 	if (current->IsJunction())
 	{
