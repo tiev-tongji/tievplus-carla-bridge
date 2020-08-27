@@ -8,15 +8,19 @@ set (CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g2 -ggdb")
 set (CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
 
 # add search directories
-include_directories ("/usr/local/include/")
-include_directories (${CMAKE_SOURCE_DIR}/msg/include)
-include_directories (${CMAKE_SOURCE_DIR}/../PythonAPI/carla/dependencies/include)
-include_directories (${CMAKE_SOURCE_DIR}/../PythonAPI/carla/dependencies/include/system)
-link_directories (${CMAKE_SOURCE_DIR}/../PythonAPI/carla/dependencies/lib)
+find_package(GeographicLib)
+include_directories (${CMAKE_SOURCE_DIR})
+include_directories (${GeographicLib_INCLUDE_DIRS})
+include_directories (${CMAKE_SOURCE_DIR}/msg/include_lcm)
+include_directories (${CMAKE_SOURCE_DIR}/LibCarla/include)
+include_directories (${CMAKE_SOURCE_DIR}/LibCarla/include/system)
+link_directories (${CMAKE_SOURCE_DIR}/LibCarla/lib)
+link_directories (${CMAKE_SOURCE_DIR}/lcm/lib)
+
 # compile library
 add_library (msg_manager_new "MessageManager.cpp")
 
 # link
-target_link_libraries(msg_manager_new zcm Geographic carla_client
-                      Detour DetourCrowd boost_filesystem
-                      Recast rpc png jpeg tiff)
+target_link_libraries(msg_manager_new lcm ${GeographicLib_LIBRARIES} carla_client
+                      Detour DetourCrowd libboost_filesystem-vc141-mt-x64-1_72
+                      Recast rpc zlib libpng shlwapi)

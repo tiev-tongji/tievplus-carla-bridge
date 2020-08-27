@@ -19,6 +19,7 @@
 #include "carla/sensor/data/Image.h"
 #include "carla/client/DebugHelper.h"
 #include "carla/trafficmanager/TrackTraffic.h"
+#include "carla/geom/Math.h"
 
 namespace tievsim
 {
