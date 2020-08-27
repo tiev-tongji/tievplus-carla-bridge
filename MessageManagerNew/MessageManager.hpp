@@ -1,7 +1,9 @@
 #pragma once
 #include "MessageManagerBase.hpp"
 #include "utils.hpp"
+
 #include "GeographicLib/GeoCoords.hpp"
+#include "rapidjson/rapidjson.h"
 
 #include "carla/client/Client.h"
 #include "carla/client/World.h"
@@ -45,7 +47,8 @@ namespace tievsim
         SharedPtr<cc::Vehicle> ego_car_;
         SharedPtr<cc::Sensor> lidar_;
 
-        PredictedObject PackOneObject();
+        PredictedObject PackOneObject(const SharedPtr<cc::Actor> actor);
+
     };
 
 }; // namespace tievsim

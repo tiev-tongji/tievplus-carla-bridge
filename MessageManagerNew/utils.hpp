@@ -4,8 +4,7 @@
 #include <list>
 #include <string>
 #include <cmath>
-
-#include "carla/geom/Transform.h"
+#include <exception>
 
 namespace tievsim
 {
@@ -39,134 +38,20 @@ namespace tievsim
         }
 
         // string operation
-        inline bool start_with(const std::string &s1, const std::string &s2)
+        inline bool StartWith(const std::string &s1, const std::string &s2)
         {
             return s2.size() <= s1.size() && s1.compare(0, s2.size(), s2) == 0;
         }
 
-        // geometry
-        carla::geom::Location rel2abs(const carla::geom::Transform &origin,
-                                      const carla::geom::Location &offset,
-                                      bool y_axis_bind_left = false)
+        // carla specified
+        string GetAttribute(const vector<cc::ActorAttributeValue> &attrs, const string &attr_name)
         {
-            float yaw = deg2rad(origin.rotation.yaw);
-            float x = origin.location.x + cos(yaw) * offset.x;
-            float y = origin.location.y + sin(yaw) * offset.x;
-            if (y_axis_bind_left)
+            for (auto attr : attrs)
             {
-                x += sin(yaw) * offset.y;
-                y -= cos(yaw) * offset.y;
+                if (attr.GetId() == attr_name)
+                    return attr.GetValue();
             }
-            else
-            {
-                x -= sin(yaw) * offset.y;
-                y += cos(yaw) * offset.y;
-            }
-            float z = origin.location.z + offset.z;
-            return carla::geom::Location{x, y, z};
-        }
-
-        enum GeoOrientation
-        {
-            East,
-            North,
-            West,
-            South
-        };
-
-        class Location
-        {
-        public:
-            /**
-             * @brief Construct a new Location object
-             * 
-             * @param x in meters
-             * @param y in meters
-             * @param z in meters
-             * @param leftHand true for left-hand-axis, false for right-hand-axis
-             * @param binding binding x-axis to given geo-orientation
-             */
-            Location(double x = 0.0, double y = 0.0, double z = 0.0,
-                     bool leftHand = false, GeoOrientation binding = GeoOrientation::East)
-                : x(x), y(y), z(z), leftHand(leftHand), binding(binding){};
-
-        public:
-            double x;
-            double y;
-            double z;
-
-        private:
-            bool leftHand;
-            GeoOrientation binding;
-        };
-
-        class Rotation
-        {
-        public:
-            /**
-             * @brief Construct a new Rotation object
-             * 
-             * @param roll rotation around x, rad
-             * @param pitch rotation around y, rad
-             * @param yaw  rotation around z, rad
-             * @param rollOrientation true for counter-clockwise, false for clockwise
-             * @param pitchOrientation true for counter-clockwise, false for clockwise
-             * @param yawOrientation true for counter-clockwise, false for clockwise
-             */
-            Rotation(double roll = 0.0, double pitch = 0.0, double yaw = 0.0,
-                     bool rollOrientation = false, bool pitchOrientation = true, bool yawOrientation = true)
-                : roll(roll), pitch(pitch), yaw(yaw),
-                  ro(rollOrientation), po(pitchOrientation), yo(yawOrientation){};
-
-        public:
-            double roll;
-            double pitch;
-            double yaw;
-
-        private:
-            double ro;
-            double po;
-            double yo;
-        };
-
-        class Transform
-        {
-        public:
-            Transform(double x = 0.0, double y = 0.0, double z = 0.0,
-                      double roll = 0.0, double pitch = 0.0, double yaw = 0.0,
-                      bool leftHand = false, GeoOrientation binding = GeoOrientation::East,
-                      bool rollOrientation = false, bool pitchOrientation = true, bool yawOrientation = true)
-                : loc(x, y, z, leftHand, binding),
-                  rot(roll, pitch, yaw, rollOrientation, pitchOrientation, yawOrientation){};
-            Transform(const Location &loc, const Rotation &rot)
-                : loc(loc), rot(rot){};
-
-        public:
-            Location loc;
-            Rotation rot;
-        };
-
-        inline Transform carla2vehframe(const Transform &veh, const Transform &target)
-        {
-            ;
-        }
-
-        inline Transform vehframe2carla(const Transform &veh, const Transform &target)
-        {
-            ;
-        }
-
-        inline bool checkInVehframe(const Transform &veh, const Transform &target,
-                                    double front = 170, double back = 30,
-                                    double left = 40, double right = 40,
-                                    double top = 10, double bottom = 10)
-        {
-            ;
-        }
-
-        inline bool checkInArea()
-        {
-            ;
+            return "not found";
         }
 
     } // namespace utils
