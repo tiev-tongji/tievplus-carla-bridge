@@ -9,8 +9,42 @@ namespace tievsim
 {
     using namespace utils;
 
-    MessageManager::MessageManager(const string &url)
-        : MessageManagerBase(url){};
+    MessageManager::MessageManager(const string &url, const string &parameter_filepath)
+        : MessageManagerBase(url) { PullParameter(parameter_filepath); }
+
+    void MessageManager::PullParameter(const string &filepath)
+    {
+        FILE *fp = fopen(filepath.c_str(), "r");
+        if (fp == 0)
+        {
+            printf("[Error] cannot open %s.\n", filepath.c_str());
+            return;
+        }
+        printf("[INFO] controller use %s.\n", filepath.c_str());
+        char read_buffer[1024];
+        rapidjson::FileReadStream is(fp, read_buffer, sizeof(read_buffer));
+        rapidjson::Document d;
+        d.ParseStream(is);
+
+        kWheelbase = d["vehicle"]["wheelbase"].GetFloat();
+        kMass = d["vehicle"]["mass"].GetFloat();
+        kMassCenter.x = d["vehicle"]["mass_center"]["x"].GetFloat();
+        kMassCenter.y = d["vehicle"]["mass_center"]["y"].GetFloat();
+        kMassCenter.z = d["vehicle"]["mass_center"]["z"].GetFloat();
+        kWheelRadius = d["vehicle"]["wheel_radius"].GetFloat();
+        kMaxSteer = d["vehicle"]["max_steer_angle"].GetFloat();
+        kMaxSteerWheel = d["vehicle"]["max_steerwheel_angle"].GetFloat();
+        kPathPointNum = d["objectlist"]["num_path_points"].GetInt();
+        kPathPointTimestep = d["objectlist"]["timestep"].GetInt();
+        kMapResolution = d["fusionmap"]["resolution"].GetFloat();
+        kMapRowNum = d["fusionmap"]["num_rows"].GetInt();
+        kMapColNum = d["fusionmap"]["num_cols"].GetInt();
+        kMapRowCenter = d["fusionmap"]["center_row"].GetInt();
+        kMapColCenter = d["fusionmap"]["center_col"].GetInt();
+        kLanelinePointNum = d["fusionmap"]["num_laneline_points"].GetInt();
+        kLanelinPointDistance = d["fusionmap"]["distance_laneline_points"].GetFloat();
+        fclose(fp);
+    }
 
     void MessageManager::PackCaninfo(const csd::IMUMeasurement &imu_msg)
     {
@@ -44,7 +78,7 @@ namespace tievsim
         caninfo_.acceleration_x = cg::Math::Dot(acc, trans.GetForwardVector());
         caninfo_.acceleration_y = -cg::Math::Dot(acc, trans.GetRightVector());
         // 当前控制量
-        caninfo_.steer_wheel_angle = -ego_car_->GetControl().steer * 500;
+        caninfo_.steer_wheel_angle = -ego_car_->GetControl().steer * kMaxSteerWheel;
         caninfo_.brake_deepness = ego_car_->GetControl().brake;
         caninfo_.accelerate_deepness = ego_car_->GetControl().throttle;
         caninfo_.brake_pedal_state = ego_car_->GetControl().brake == 0 ? 0 : 1;
@@ -79,7 +113,7 @@ namespace tievsim
         navinfo_.timestamp = gnss_msg.GetTimestamp() * 1000;
 
         auto trans_rear = ego_car_->GetTransform();
-        cg::Vector3D loc_front = {2.3, 0.0, 0.0};
+        cg::Vector3D loc_front = {kWheelbase, 0.0, 0.0};
         trans_rear.TransformPoint(loc_front); // 变换到前轴
 
         // 位置
@@ -155,21 +189,22 @@ namespace tievsim
         {
             pred_obj.type = 127; // for unknown type
         }
-        // 速度和加速度
-        auto trans = actor->GetTransform();
-        auto vel = actor->GetVelocity();
-        float vel_forward = cg::Math::Dot(vel, trans.GetForwardVector());
-        float vel_right = cg::Math::Dot(vel, trans.GetRightVector());
-        pred_obj.velocity = norm2(vel_forward, vel_right);
-        pred_obj.velocity = vel_forward > 0 ? pred_obj.velocity : -pred_obj.velocity;
-        auto acc = actor->GetAcceleration();
-        float acc_forward = cg::Math::Dot(acc, trans.GetForwardVector());
-        float acc_right = cg::Math::Dot(acc, trans.GetRightVector());
-        pred_obj.accelerate = norm2(acc_forward, acc_right);
-        pred_obj.accelerate = acc_forward > 0 ? pred_obj.accelerate : -pred_obj.accelerate;
 
-        auto rot_ego = ego_car_->GetTransform().rotation;
-        auto rot_actor = actor->GetTransform().rotation;
+        // 速度和加速度
+        auto trans_actor = actor->GetTransform();
+        auto vel_actor = actor->GetVelocity();
+        float vel_actor_forward = cg::Math::Dot(vel_actor, trans_actor.GetForwardVector());
+        float vel_actor_right = cg::Math::Dot(vel_actor, trans_actor.GetRightVector());
+        pred_obj.velocity = norm2(vel_actor_forward, vel_actor_right);
+        pred_obj.velocity = vel_actor_forward > 0 ? pred_obj.velocity : -pred_obj.velocity;
+        auto acc_actor = actor->GetAcceleration();
+        float acc_actor_forward = cg::Math::Dot(acc_actor, trans_actor.GetForwardVector());
+        float acc_actor_right = cg::Math::Dot(acc_actor, trans_actor.GetRightVector());
+        pred_obj.accelerate = norm2(acc_actor_forward, acc_actor_right);
+        pred_obj.accelerate = acc_actor_forward > 0 ? pred_obj.accelerate : -pred_obj.accelerate;
+
+        // 航向角
+        auto rot_actor = trans_actor.rotation;
         // float heading = 90 + rot_ego.yaw - rot_actor.yaw; // relative
         float heading = -rot_actor.yaw; // absolute
         if (heading < -180)
@@ -178,76 +213,101 @@ namespace tievsim
             heading = heading - 360;
         pred_obj.heading = deg2rad(heading);
 
-        pred_obj.trajectory_point_num = POINTS_NUM_OBJECTLIST_PREDICT;
-        pred_obj.trajectory_point.resize(2, std::vector<float>(POINTS_NUM_OBJECTLIST_PREDICT));
-        auto loc_ego = ego_car_->GetTransform().location;
-        auto loc = actor->GetTransform().location;
-        for (int i = 0; i < POINTS_NUM_OBJECTLIST_PREDICT; ++i)
+        // 后推轨迹
+        pred_obj.trajectory_point_num = kPathPointNum;
+        pred_obj.trajectory_point.resize(2, std::vector<float>(kPathPointNum));
+        auto loc_actor = trans_actor.location;
+        auto trans_ego = ego_car_->GetTransform();
+        for (int i = 0; i < kPathPointNum; ++i)
         {
-            cg::Location locPred;
-            double t = TIMESTEP_OBJECTLIST_PREDICT;
-            locPred.x = loc.x + i * t * vel.x + 0.5 * pow(i * t, 2) * pActor->GetAcceleration().x;
-            locPred.y = loc.y + i * t * vel.y + 0.5 * pow(i * t, 2) * pActor->GetAcceleration().y;
-            cg::Location locVehframe = unreal2vehframe(loc_ego, locPred, rot_ego.yaw);
-            pred_obj.trajectory_point[0][i] = locVehframe.x;
-            pred_obj.trajectory_point[1][i] = locVehframe.y;
+            cg::Location pred_loc;
+            double t = kPathPointTimestep;
+            pred_loc.x = loc_actor.x + i * t * vel_actor.x + 0.5 * pow(i * t, 2) * acc_actor.x;
+            pred_loc.y = loc_actor.y + i * t * vel_actor.y + 0.5 * pow(i * t, 2) * acc_actor.y;
+            pred_loc.z = loc_actor.z + i * t * vel_actor.z + 0.5 * pow(i * t, 2) * acc_actor.z;
+            cg::Location loc_actor_vehframe = ToVehFrame(trans_ego, loc_actor);
+            pred_obj.trajectory_point[0][i] = loc_actor_vehframe.x;
+            pred_obj.trajectory_point[1][i] = loc_actor_vehframe.y;
         }
 
-        auto bb = pActor->Serialize().bounding_box;
-        pred_obj.length = pActor->Serialize().bounding_box.extent.x * 2;
-        pred_obj.width = pActor->Serialize().bounding_box.extent.y * 2;
+        // 碰撞包围盒
+        auto bb = actor->Serialize().bounding_box;
+        pred_obj.length = actor->Serialize().bounding_box.extent.x * 2;
+        pred_obj.width = actor->Serialize().bounding_box.extent.y * 2;
         vector<cg::Location> vertexs(4);
-        double obj_yaw = deg2rad(rot_actor.yaw);
-
-        vertexs[0].x = loc.x + (bb.location.x + bb.extent.x) * cos(obj_yaw) - (bb.location.y + bb.extent.y) * sin(obj_yaw);
-        vertexs[0].y = loc.y + (bb.location.x + bb.extent.x) * sin(obj_yaw) + (bb.location.y + bb.extent.y) * cos(obj_yaw);
-
-        vertexs[1].x = loc.x + (bb.location.x + bb.extent.x) * cos(obj_yaw) - (bb.location.y - bb.extent.y) * sin(obj_yaw);
-        vertexs[1].y = loc.y + (bb.location.x + bb.extent.x) * sin(obj_yaw) + (bb.location.y - bb.extent.y) * cos(obj_yaw);
-
-        vertexs[2].x = loc.x + (bb.location.x - bb.extent.x) * cos(obj_yaw) - (bb.location.y - bb.extent.y) * sin(obj_yaw);
-        vertexs[2].y = loc.y + (bb.location.x - bb.extent.x) * sin(obj_yaw) + (bb.location.y - bb.extent.y) * cos(obj_yaw);
-
-        vertexs[3].x = loc.x + (bb.location.x - bb.extent.x) * cos(obj_yaw) - (bb.location.y + bb.extent.y) * sin(obj_yaw);
-        vertexs[3].y = loc.y + (bb.location.x - bb.extent.x) * sin(obj_yaw) + (bb.location.y + bb.extent.y) * cos(obj_yaw);
-
+        vertexs[0] = {bb.extent.x, bb.extent.y, 0};
+        vertexs[1] = {-bb.extent.x, -bb.extent.y, 0};
+        vertexs[2] = {bb.extent.x, -bb.extent.y, 0};
+        vertexs[3] = {-bb.extent.x, bb.extent.y, 0};
         for (auto &vertex : vertexs)
         {
-            vertex = unreal2vehframe(loc_ego, vertex, rot_ego.yaw);
+            trans_actor.TransformPoint(vertex);
+            vertex = ToVehFrame(trans_ego, vertex);
         }
-        for (int i = 0; i < 4; ++i)
+        std::list<size_t> right_to_left(4);
+        std::list<size_t> bottom_to_up(4);
+        for (size_t i = 0; i < 4; ++i)
         {
-            if (vertexs[i].y >= pred_obj.trajectory_point[1][0])
+            if (right_to_left.empty())
             {
-                if (vertexs[i].x <= pred_obj.trajectory_point[0][0])
-                {
-                    // left-bottom vertex
-                    pred_obj.bounding_box[0][1] = vertexs[i].x;
-                    pred_obj.bounding_box[1][1] = vertexs[i].y;
-                }
-                else
-                {
-                    // left-up vertex
-                    pred_obj.bounding_box[0][0] = vertexs[i].x;
-                    pred_obj.bounding_box[1][0] = vertexs[i].y;
-                }
+                right_to_left.push_back(i);
+            }
+            else if (vertexs[i].y > vertexs[right_to_left.back()].y)
+            {
+                right_to_left.push_back(i);
             }
             else
             {
-                if (vertexs[i].x <= pred_obj.trajectory_point[0][0])
-                {
-                    // right-bottom vertex
-                    pred_obj.bounding_box[0][3] = vertexs[i].x;
-                    pred_obj.bounding_box[1][3] = vertexs[i].y;
-                }
-                else
-                {
-                    // right-up vertex
-                    pred_obj.bounding_box[0][2] = vertexs[i].x;
-                    pred_obj.bounding_box[1][2] = vertexs[i].y;
-                }
+                right_to_left.push_front(i);
+            }
+
+            if (bottom_to_up.empty())
+            {
+                bottom_to_up.push_back(i);
+            }
+            else if (vertexs[i].x > vertexs[bottom_to_up.back()].x)
+            {
+                bottom_to_up.push_back(i);
+            }
+            else
+            {
+                bottom_to_up.push_front(i);
             }
         }
-        return pred_obj;
-    };
+        // left-up vertex
+        pred_obj.bounding_box[0][0] = vertexs[right_to_left[3]].x;
+        pred_obj.bounding_box[1][0] = vertexs[right_to_left[3]].y;
+        if (vertexs[i].y >= pred_obj.trajectory_point[1][0])
+        {
+            if (vertexs[i].x <= pred_obj.trajectory_point[0][0])
+            {
+                // left-bottom vertex
+                pred_obj.bounding_box[0][1] = vertexs[i].x;
+                pred_obj.bounding_box[1][1] = vertexs[i].y;
+            }
+            else
+            {
+                // left-up vertex
+                pred_obj.bounding_box[0][0] = vertexs[i].x;
+                pred_obj.bounding_box[1][0] = vertexs[i].y;
+            }
+        }
+        else
+        {
+            if (vertexs[i].x <= pred_obj.trajectory_point[0][0])
+            {
+                // right-bottom vertex
+                pred_obj.bounding_box[0][3] = vertexs[i].x;
+                pred_obj.bounding_box[1][3] = vertexs[i].y;
+            }
+            else
+            {
+                // right-up vertex
+                pred_obj.bounding_box[0][2] = vertexs[i].x;
+                pred_obj.bounding_box[1][2] = vertexs[i].y;
+            }
+        }
+    }
+    return pred_obj;
+}; // namespace tievsim
 } // namespace tievsim

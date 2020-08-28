@@ -1,0 +1,29 @@
+{
+    "vehicle": {
+        "wheelbase": 2.3,
+        "mass": 1854,
+        "mass_center": {
+            "x": 1.436,
+            "y": 0.0,
+            "z": -0.526
+        },
+        "wheel_radius": 33,
+        "max_steer_angle": 54,
+        "max_steerwheel_angle": 500
+    },
+    "objectlist": {
+        "num_path_points": 10,
+        "timestep": 0.5
+    },
+    "fusionmap": {
+        "resolution": 0.2,
+        "num_rows": 1001,
+        "num_columns": 401,
+        "center_row": 850,
+        "center_column": 200,
+    },
+    "roadmarking": {
+        "distance_laneline_points": 1,
+        "num_laneline_points": 50
+    }
+}

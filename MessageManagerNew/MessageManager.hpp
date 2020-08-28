@@ -1,9 +1,11 @@
 #pragma once
+#include <list>
 #include "MessageManagerBase.hpp"
 #include "utils.hpp"
 
 #include "GeographicLib/GeoCoords.hpp"
-#include "rapidjson/rapidjson.h"
+#include "rapidjson/filereadstream.h"
+#include "rapidjson/document.h"
 
 #include "carla/client/Client.h"
 #include "carla/client/World.h"
@@ -29,18 +31,19 @@ namespace tievsim
     namespace csd = carla::sensor::data;
     namespace cs = carla::sensor;
     using carla::SharedPtr;
+    using std::list;
 
     class MessageManager : public MessageManagerBase
     {
     public:
-        MessageManager(const string &url);
+        MessageManager(const string &url, const string &parameter_filepath);
         ~MessageManager() = default;
 
         void PackCaninfo(const csd::IMUMeasurement &imu_msg);
         void PackNavinfo(const csd::GnssMeasurement &gnss_msg);
-        void PackObjectlist();
-        void PackFusionmap();
-        void PackRoadmarking();
+        void PackObjectlist(const cc::ActorList &actors);
+        void PackFusionmap(const csd::LidarMeasurement &lidar_msg);
+        void PackRoadmarking(SharedPtr<cc::Map> map);
         void PackTrafficlight();
 
     private:
@@ -48,7 +51,29 @@ namespace tievsim
         SharedPtr<cc::Sensor> lidar_;
 
         PredictedObject PackOneObject(const SharedPtr<cc::Actor> actor);
+        void PullParameter(const string &filepath);
+        void RasterFusionmap();
+        Lane PackLane(SharedPtr<cc::Waypoint> waypoint, SharedPtr<cc::Waypoint> current);
+        list<SharedPtr<cc::Waypoint>> GetSlice(SharedPtr<cc::Waypoint> current,
+                                               int *left_lane_num, int *right_lane_num);
 
+        // 参数表
+    private:
+        float kWheelbase;
+        float kMass;
+        cg::Location kMassCenter;
+        float kWheelRadius;
+        float kMaxSteer;
+        float kMaxSteerWheel;
+        int kPathPointNum;
+        float kPathPointTimestep;
+        float kMapResolution;
+        int kMapRowNum;
+        int kMapColNum;
+        int kMapRowCenter;
+        int kMapColCenter;
+        int kLanelinePointNum;
+        float kLanelinePointDistance;
     };
 
 }; // namespace tievsim
