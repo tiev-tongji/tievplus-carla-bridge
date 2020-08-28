@@ -42,7 +42,7 @@ namespace tievsim
         kMapRowCenter = d["fusionmap"]["center_row"].GetInt();
         kMapColCenter = d["fusionmap"]["center_col"].GetInt();
         kLanelinePointNum = d["fusionmap"]["num_laneline_points"].GetInt();
-        kLanelinPointDistance = d["fusionmap"]["distance_laneline_points"].GetFloat();
+        kLanelinePointDistance = d["fusionmap"]["distance_laneline_points"].GetFloat();
         fclose(fp);
     }
 
@@ -235,79 +235,378 @@ namespace tievsim
         pred_obj.length = actor->Serialize().bounding_box.extent.x * 2;
         pred_obj.width = actor->Serialize().bounding_box.extent.y * 2;
         vector<cg::Location> vertexs(4);
-        vertexs[0] = {bb.extent.x, bb.extent.y, 0};
-        vertexs[1] = {-bb.extent.x, -bb.extent.y, 0};
-        vertexs[2] = {bb.extent.x, -bb.extent.y, 0};
-        vertexs[3] = {-bb.extent.x, bb.extent.y, 0};
+        vertexs[0] = {bb.location.x + bb.extent.x, bb.location.y + bb.extent.y, bb.location.z};
+        vertexs[1] = {bb.location.x - bb.extent.x, bb.location.y - bb.extent.y, bb.location.z};
+        vertexs[2] = {bb.location.x + bb.extent.x, bb.location.y - bb.extent.y, bb.location.z};
+        vertexs[3] = {bb.location.x - bb.extent.x, bb.location.y + bb.extent.y, bb.location.z};
         for (auto &vertex : vertexs)
         {
             trans_actor.TransformPoint(vertex);
             vertex = ToVehFrame(trans_ego, vertex);
         }
-        std::list<size_t> right_to_left(4);
-        std::list<size_t> bottom_to_up(4);
+        vector<size_t> ordered(4); // right-top, right-bottom, left-top, left-bottom
         for (size_t i = 0; i < 4; ++i)
         {
-            if (right_to_left.empty())
+            if (ordered.empty())
             {
-                right_to_left.push_back(i);
+                ordered.push_back(i);
             }
-            else if (vertexs[i].y > vertexs[right_to_left.back()].y)
+            else if (vertexs[i].y > vertexs[ordered.back()].y)
             {
-                right_to_left.push_back(i);
+                ordered.push_back(i);
             }
             else
             {
-                right_to_left.push_front(i);
+                ordered.insert(ordered.begin(), i);
+            }
+        }
+        if (vertexs[ordered[0]].x < vertexs[ordered[1]].x)
+        {
+            size_t temp = ordered[0];
+            ordered[0] = ordered[1];
+            ordered[1] = temp;
+        }
+        if (vertexs[ordered[2]].x < vertexs[ordered[3]].x)
+        {
+            size_t temp = ordered[2];
+            ordered[2] = ordered[3];
+            ordered[3] = temp;
+        }
+        // right-up vertex
+        pred_obj.bounding_box[0][2] = vertexs[ordered[0]].x;
+        pred_obj.bounding_box[1][2] = vertexs[ordered[0]].y;
+        // right-bottom vertex
+        pred_obj.bounding_box[0][3] = vertexs[ordered[1]].x;
+        pred_obj.bounding_box[1][3] = vertexs[ordered[1]].y;
+        // left-up vertex
+        pred_obj.bounding_box[0][0] = vertexs[ordered[2]].x;
+        pred_obj.bounding_box[1][0] = vertexs[ordered[2]].y;
+        // left-bottom vertex
+        pred_obj.bounding_box[0][1] = vertexs[ordered[3]].x;
+        pred_obj.bounding_box[1][1] = vertexs[ordered[3]].y;
+        return pred_obj;
+    }
+
+    void MessageManager::PackObjectlist(const cc::ActorList &actors)
+    {
+        std::lock_guard<std::mutex> objectlist_lock(objectlist_mutex_, std::adopt_lock);
+        object_list_.time_stamp = navinfo_.timestamp;
+        object_list_.data_source = 1;
+        object_list_.object_count = 0;
+        object_list_.predicted_object.clear();
+        for (auto actor : actors)
+        {
+            if (actor->GetId() == ego_car_->GetId())
+            {
+                continue;
+            }
+            if (!(StartWith(actor->GetTypeId(), "vehicle") ||
+                  StartWith(actor->GetTypeId(), "walker") ||
+                  StartWith(actor->GetTypeId(), "static.prop")))
+            {
+                continue;
             }
 
-            if (bottom_to_up.empty())
+            auto rloc_actor = ToVehFrame(ego_car_->GetTransform(), actor->GetLocation());
+            // 判断目标是否处于Map内，缩小3m范围
+            bool in_vehframe = rloc_actor.x + 3 <= kMapRowCenter * kMapResolution &&
+                               rloc_actor.x - 3 >= -(kMapRowNum - kMapRowCenter) * kMapResolution &&
+                               rloc_actor.y + 3 <= kMapColCenter * kMapResolution &&
+                               rloc_actor.y - 3 >= kMapColCenter * kMapResolution &&
+                               fabs(rloc_actor.z) <= 3;
+            if (!in_vehframe)
             {
-                bottom_to_up.push_back(i);
+                continue;
             }
-            else if (vertexs[i].x > vertexs[bottom_to_up.back()].x)
-            {
-                bottom_to_up.push_back(i);
-            }
-            else
-            {
-                bottom_to_up.push_front(i);
-            }
+
+            auto obj = PackOneObject(actor);
+            object_list_.predicted_object.push_back(obj);
+            ++object_list_.object_count;
         }
-        // left-up vertex
-        pred_obj.bounding_box[0][0] = vertexs[right_to_left[3]].x;
-        pred_obj.bounding_box[1][0] = vertexs[right_to_left[3]].y;
-        if (vertexs[i].y >= pred_obj.trajectory_point[1][0])
+    }
+
+    void MessageManager::RasterFusionmap()
+    {
+        for (auto &obj : object_list_.predicted_object)
         {
-            if (vertexs[i].x <= pred_obj.trajectory_point[0][0])
+            auto box = obj.bounding_box;
+
+            // calculate rasterize zoom
+            float left = box[1][0] > box[1][1] ? box[1][0] : box[1][1];
+            float right = box[1][2] < box[1][3] ? box[1][2] : box[1][3];
+            float bottom = box[0][1] < box[0][3] ? box[0][1] : box[0][3];
+            float top = box[0][0] > box[0][2] ? box[0][0] : box[0][2];
+            int16_t left_cell = -ceil(left / fusionmap_.map_resolution) + fusionmap_.car_center_column;
+            int16_t right_cell = -floor(right / fusionmap_.map_resolution) + fusionmap_.car_center_column;
+            int16_t bottom_cell = fusionmap_.car_center_row - floor(bottom / fusionmap_.map_resolution);
+            int16_t top_cell = fusionmap_.car_center_row - ceil(top / fusionmap_.map_resolution);
+
+            // front x, right y
+            int16_t ymin = left_cell > -1 ? left_cell : 0;
+            int16_t ymax = right_cell < fusionmap_.map_column_num ? right_cell : (fusionmap_.map_column_num - 1);
+            int16_t xmin = top_cell > -1 ? top_cell : 0;
+            int16_t xmax = bottom_cell < fusionmap_.map_row_num ? bottom_cell : (fusionmap_.map_row_num - 1);
+
+            // rasterize obstacles into map cells
+            int16_t x = xmin;
+            int16_t y = ymin;
+            while (x <= xmax)
             {
-                // left-bottom vertex
-                pred_obj.bounding_box[0][1] = vertexs[i].x;
-                pred_obj.bounding_box[1][1] = vertexs[i].y;
-            }
-            else
-            {
-                // left-up vertex
-                pred_obj.bounding_box[0][0] = vertexs[i].x;
-                pred_obj.bounding_box[1][0] = vertexs[i].y;
-            }
-        }
-        else
-        {
-            if (vertexs[i].x <= pred_obj.trajectory_point[0][0])
-            {
-                // right-bottom vertex
-                pred_obj.bounding_box[0][3] = vertexs[i].x;
-                pred_obj.bounding_box[1][3] = vertexs[i].y;
-            }
-            else
-            {
-                // right-up vertex
-                pred_obj.bounding_box[0][2] = vertexs[i].x;
-                pred_obj.bounding_box[1][2] = vertexs[i].y;
+                y = ymin;
+                while (y <= ymax)
+                {
+                    double posx = -(y - fusionmap_.car_center_column) * fusionmap_.map_resolution;
+                    double posy = (fusionmap_.car_center_row - x) * fusionmap_.map_resolution;
+                    bool occupied = InAreaTest(posy, posx, obj);
+                    if (occupied)
+                    {
+                        // bit-0 history obstacle, bit-1 lidar obstacle, bit-2 moving obstacle
+                        fusionmap_.map_cells[x][y] |= 0b00000010;
+                        bool isMoving = (fabs(obj.velocity) > 100);
+                        if (isMoving)
+                        {
+                            fusionmap_.map_cells[x][y] |= 0b00000100;
+                        }
+                    }
+                    ++y;
+                }
+                ++x;
             }
         }
     }
-    return pred_obj;
-}; // namespace tievsim
+
+    void MessageManager::PackFusionmap(const csd::LidarMeasurement &lidar_msg)
+    {
+        std::lock_guard<std::mutex> fusionmap_lock(fusionmap_mutex_, std::adopt_lock);
+
+        fusionmap_.map_cells.assign(kMapRowNum, vector<uint8_t>(kMapColNum));
+        fusionmap_.time_stamp = navinfo_.timestamp;
+        fusionmap_.car_utm_position_x = navinfo_.utm_x;
+        fusionmap_.car_utm_position_y = navinfo_.utm_y;
+        fusionmap_.car_heading = navinfo_.angle_head;
+        fusionmap_.map_resolution = kMapResolution;
+        fusionmap_.map_row_num = kMapRowNum;
+        fusionmap_.map_column_num = kMapColNum;
+        fusionmap_.car_center_column = kMapColCenter;
+        fusionmap_.car_center_row = kMapRowCenter;
+
+        RasterFusionmap();
+    }
+
+    list<SharedPtr<cc::Waypoint>> MessageManager::GetSlice(SharedPtr<cc::Waypoint> current,
+                                                           int *left_lane_num, int *right_lane_num)
+    {
+        list<SharedPtr<cc::Waypoint>> slice;
+        slice.push_back(current);
+
+        // 往左遍历
+        bool has_left = true;
+        bool reverse_left = false;
+        *left_lane_num = 0;
+        auto current_left = current;
+        while (has_left)
+        {
+            SharedPtr<cc::Waypoint> left;
+            if (!reverse_left)
+                left = current_left->GetLeft();
+            else
+                left = current_left->GetRight();
+
+            if (!left.get())
+            {
+                has_left = false;
+            }
+            else if (!CheckLaneType(left->GetType()))
+            {
+                has_left = false;
+            }
+            else if (left->GetLaneId() * current->GetLaneId() < 0)
+            {
+                slice.push_back(left);
+                *left_lane_num += 1;
+                current_left = left;
+                reverse_left = true;
+            }
+            else
+            {
+                slice.push_back(left);
+                *left_lane_num += 1;
+                current_left = left;
+            }
+        }
+
+        // 往右遍历
+        bool has_right = true;
+        bool reverse_right = false;
+        *right_lane_num = 0;
+        auto current_right = current;
+        while (has_right)
+        {
+            SharedPtr<cc::Waypoint> right;
+            if (!reverse_right)
+                right = current_right->GetRight();
+            else
+                right = current_right->GetLeft();
+
+            if (!right.get())
+            {
+                has_right = false;
+            }
+            else if (!CheckLaneType(right->GetType()))
+            {
+                has_right = false;
+            }
+            else if (right->GetLaneId() * current->GetLaneId() < 0)
+            {
+                slice.push_front(right);
+                *right_lane_num += 1;
+                current_left = right;
+                reverse_right = true;
+            }
+            else
+            {
+                slice.push_front(right);
+                *right_lane_num += 1;
+                current_right = right;
+            }
+        }
+    }
+
+    Lane MessageManager::PackLane(SharedPtr<cc::Waypoint> waypoint, SharedPtr<cc::Waypoint> current)
+    {
+        typedef carla::road::element::LaneMarking::LaneChange LaneChange;
+        typedef carla::road::element::LaneMarking::Type LaneLineType;
+
+        Lane lane;
+        lane.width = waypoint->GetLaneWidth();
+        lane.lane_type = Lane::kTypeNone; // TODO: carla暂不支持
+
+        LaneLine line_left;
+        line_left.distance = kLanelinePointDistance;
+        auto marking_left = waypoint->GetLeftLaneMarking();
+        if (waypoint->GetLaneId() * current->GetLaneId() < 0)
+        {
+            marking_left = waypoint->GetRightLaneMarking();
+        }
+        ParseLaneLineType(marking_left->type, &line_left);
+
+        LaneLine line_right;
+        line_right.distance = kLanelinePointDistance;
+        auto marking_right = waypoint->GetRightLaneMarking();
+        if (waypoint->GetLaneId() * current->GetLaneId() < 0)
+        {
+            marking_right = waypoint->GetLeftLaneMarking();
+        }
+        ParseLaneLineType(marking_right->type, &line_right);
+
+        vector<SharedPtr<cc::Waypoint>> next_waypoints =
+            waypoint->GetNextUntilLaneEnd(kLanelinePointDistance);
+        vector<SharedPtr<cc::Waypoint>> prev_waypoints =
+            waypoint->GetPreviousUntilLaneStart(kLanelinePointDistance);
+
+        auto trans_ego = ego_car_->GetTransform();
+        for (auto it = prev_waypoints.rbegin(); it != prev_waypoints.rend(); ++it)
+        {
+            auto wp = *it;
+            double width = wp->GetLaneWidth();
+            cg::Location loc_left{-width / 2, 0.0, 0.0};
+            cg::Location loc_right{width / 2, 0.0, 0.0};
+            auto trans = wp->GetTransform();
+            trans.TransformPoint(loc_left);
+            trans.TransformPoint(loc_right);
+            auto rloc_left = ToVehFrame(trans_ego, loc_left);
+            auto rloc_right = ToVehFrame(trans_ego, loc_right);
+            LinePoint point_left;
+            LinePoint point_right;
+            point_left.x = rloc_left.x;
+            point_left.y = rloc_left.y;
+            point_right.x = rloc_right.x;
+            point_right.y = rloc_right.y;
+            lane.left_line.points.push_back(point_left);
+            lane.left_line.points.push_back(point_right);
+        }
+
+        for (auto wp : next_waypoints)
+        {
+            double width = wp->GetLaneWidth();
+            cg::Location loc_left{-width / 2, 0.0, 0.0};
+            cg::Location loc_right{width / 2, 0.0, 0.0};
+            auto trans = wp->GetTransform();
+            trans.TransformPoint(loc_left);
+            trans.TransformPoint(loc_right);
+            auto rloc_left = ToVehFrame(trans_ego, loc_left);
+            auto rloc_right = ToVehFrame(trans_ego, loc_right);
+            LinePoint point_left;
+            LinePoint point_right;
+            point_left.x = rloc_left.x;
+            point_left.y = rloc_left.y;
+            point_right.x = rloc_right.x;
+            point_right.y = rloc_right.y;
+            lane.left_line.points.push_back(point_left);
+            lane.left_line.points.push_back(point_right);
+        }
+
+        lane.left_line.num = lane.left_line.points.size();
+        lane.right_line.num = lane.right_line.points.size();
+    }
+
+    void MessageManager::PackRoadmarking(SharedPtr<cc::Map> map)
+    {
+        std::lock_guard<std::mutex> roadmarking_lock(roadmarking_mutex_, std::adopt_lock);
+
+        auto t1 = std::chrono::steady_clock::now();
+
+        auto current = map->GetWaypoint(ego_car_->GetLocation());
+        if (current->IsJunction())
+        {
+            return;
+        }
+
+        // 车道线
+        int left_lane_num = 0;
+        int right_lane_num = 0;
+        auto slice = GetSlice(current, &left_lane_num, &right_lane_num);
+        roadmarking_list_.current_lane_id = right_lane_num;
+        roadmarking_list_.num = right_lane_num + left_lane_num + 1;
+        for (auto wp : slice)
+        {
+            Lane lane = PackLane(wp, current);
+            roadmarking_list_.lanes.push_back(lane);
+        }
+
+        roadmarking_list_.stop_line.exist = 0;
+        roadmarking_list_.stop_line.num = 1;
+        roadmarking_list_.stop_line.stop_points.push_back(LinePoint{});
+        roadmarking_list_.stop_line.distance = -1;
+
+        roadmarking_list_.zebra.exist = 0;
+        roadmarking_list_.zebra.num = 1;
+        roadmarking_list_.zebra.zebra_points.push_back(LinePoint{});
+        roadmarking_list_.zebra.distance = -1;
+
+        roadmarking_list_.curb.exist = 0;
+        roadmarking_list_.curb.num = 1;
+        roadmarking_list_.curb.curb_points.push_back(LinePoint{});
+        roadmarking_list_.curb.distance = -1;
+
+        roadmarking_list_.no_parking.exist = 0;
+        roadmarking_list_.no_parking.num = 1;
+        roadmarking_list_.no_parking.no_parking_points.push_back(LinePoint{});
+        roadmarking_list_.no_parking.distance = -1;
+
+        roadmarking_list_.chevron.exist = 0;
+        roadmarking_list_.chevron.num = 1;
+        roadmarking_list_.chevron.chevron_points.push_back(LinePoint{});
+        roadmarking_list_.chevron.distance = -1;
+
+        auto t2 = std::chrono::steady_clock::now();
+        double dr_ms_pack_roadmarking = std::chrono::duration<double, std::milli>(t2 - t1).count();
+        //std::cout << "time to pack roadmarkinglist: " << dr_ms_pack_roadmarking << std::endl;
+    }
+
+    void MessageManager::PackTrafficlight()
+    {
+        ;
+    }
+
 } // namespace tievsim

@@ -7,6 +7,10 @@
 
 #include "carla/geom/Transform.h"
 #include "carla/client/ActorAttribute.h"
+#include "carla/client/Map.h"
+
+#include "PredictedObject.hpp"
+#include "Lane.hpp"
 
 namespace tievsim
 {
@@ -79,6 +83,85 @@ namespace tievsim
             cg::Location loc{rloc.x, -rloc.y, rloc.z};
             veh_transform.TransformPoint(loc);
             return loc;
+        }
+
+        bool CheckLaneType(const carla::road::Lane::LaneType &type)
+        {
+            typedef carla::road::Lane::LaneType LaneType;
+            switch (type)
+            {
+            case LaneType::Driving:
+                return true;
+                break;
+            case LaneType::Bidirectional:
+                return true;
+                break;
+            case LaneType::Shoulder:
+                return false;
+                break;
+            default:
+                return false;
+                break;
+            }
+        }
+
+        void ParseLaneLineType(const carla::road::element::LaneMarking::Type &type, LaneLine *line)
+        {
+            typedef carla::road::element::LaneMarking::Type Type;
+            switch (type)
+            {
+            case Type::Solid:
+                line->line_type = LaneLine::kTypeDividing;
+                break;
+            case Type::SolidSolid:
+                line->line_type = LaneLine::kTypeTypeNoPass;
+                break;
+            case Type::BrokenSolid:
+                line->line_type = LaneLine::kTypeOneWayPass;
+                break;
+            case Type::SolidBroken:
+                line->line_type = LaneLine::kTypeOneWayPass;
+                break;
+            case Type::Broken:
+                line->line_type = LaneLine::kTypeGuiding;
+                break;
+            case Type::BrokenBroken:
+                line->line_type = LaneLine::kTypeGuiding;
+                break;
+            default:
+                line->line_type = LaneLine::kTypeTypeNoPass;
+                break;
+            };
+        }
+
+        /*---------------tiev-plus specified-------------*/
+
+        bool InAreaTest(double x, double y, const PredictedObject &obj)
+        {
+            // only need to calculate the z dimension of vectors' cross products.
+            // if all cross products have the same symbol, the point is located within the area.
+            double z1 = (obj.bounding_box[0][1] - obj.bounding_box[0][0]) * (y - obj.bounding_box[1][0]) -
+                        (obj.bounding_box[1][1] - obj.bounding_box[1][0]) * (x - obj.bounding_box[0][0]);
+            bool is_neg = z1 < 0;
+            double z2 = (obj.bounding_box[0][3] - obj.bounding_box[0][1]) * (y - obj.bounding_box[1][1]) -
+                        (obj.bounding_box[1][3] - obj.bounding_box[1][1]) * (x - obj.bounding_box[0][1]);
+            if ((is_neg && z2 >= 0) || (!is_neg && z2 < 0))
+            {
+                return false; // once result's symbol is different from previous ones, return false.
+            }
+            double z3 = (obj.bounding_box[0][2] - obj.bounding_box[0][3]) * (y - obj.bounding_box[1][3]) -
+                        (obj.bounding_box[1][2] - obj.bounding_box[1][3]) * (x - obj.bounding_box[0][3]);
+            if ((is_neg && z3 >= 0) || (!is_neg && z3 < 0))
+            {
+                return false;
+            }
+            double z4 = (obj.bounding_box[0][0] - obj.bounding_box[0][2]) * (y - obj.bounding_box[1][2]) -
+                        (obj.bounding_box[1][0] - obj.bounding_box[1][2]) * (x - obj.bounding_box[0][2]);
+            if ((is_neg && z4 >= 0) || (!is_neg && z4 < 0))
+            {
+                return false;
+            }
+            return true;
         }
 
     } // namespace utils
