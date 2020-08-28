@@ -10,7 +10,8 @@ set(THIRD_PARTY ${CMAKE_SOURCE_DIR}/src/third_party)
 
 # add sub-target directories
 add_subdirectory(${SRC}/PIDController)
-add_subdirectory (${SRC}/MessageManager)
+add_subdirectory(${SRC}/MessageManager)
+add_subdirectory(${SRC}/MyWorld)
 
 # compile
 add_executable (tiev-sim "tiev-sim.cpp")

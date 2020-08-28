@@ -5,6 +5,11 @@
 
 #include "MessageManager.hpp"
 
+using carla::SharedPtr;
+using std::list;
+using std::string;
+using std::vector;
+
 namespace tievsim
 {
     using namespace utils;

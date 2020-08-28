@@ -38,14 +38,10 @@
 
 namespace tievsim
 {
-        using namespace std::chrono_literals;
-        using std::string;
-        using std::vector;
-
         class MessageManagerBase
         {
         public:
-                MessageManagerBase(const string &url);
+                MessageManagerBase(const std::string &url);
 
                 MessageManagerBase(MessageManagerBase const &) = delete;
 

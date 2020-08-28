@@ -12,6 +12,9 @@
 #include "PredictedObject.hpp"
 #include "Lane.hpp"
 
+using std::string;
+using std::vector;
+
 namespace tievsim
 {
     namespace cg = carla::geom;

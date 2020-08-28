@@ -1,5 +1,9 @@
 #include "MessageManagerBase.hpp"
 
+using namespace std::chrono_literals;
+using std::string;
+using std::vector;
+
 namespace tievsim
 {
 
