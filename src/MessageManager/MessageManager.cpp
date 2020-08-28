@@ -470,6 +470,7 @@ namespace tievsim
                 current_right = right;
             }
         }
+        return slice;
     }
 
     Lane MessageManager::PackLane(SharedPtr<cc::Waypoint> waypoint, SharedPtr<cc::Waypoint> current)
@@ -509,8 +510,8 @@ namespace tievsim
         {
             auto wp = *it;
             double width = wp->GetLaneWidth();
-            cg::Location loc_left{-width / 2, 0.0, 0.0};
-            cg::Location loc_right{width / 2, 0.0, 0.0};
+            cg::Location loc_left{float(-width / 2), 0.0, 0.0};
+            cg::Location loc_right{float(width / 2), 0.0, 0.0};
             auto trans = wp->GetTransform();
             trans.TransformPoint(loc_left);
             trans.TransformPoint(loc_right);
@@ -529,8 +530,8 @@ namespace tievsim
         for (auto wp : next_waypoints)
         {
             double width = wp->GetLaneWidth();
-            cg::Location loc_left{-width / 2, 0.0, 0.0};
-            cg::Location loc_right{width / 2, 0.0, 0.0};
+            cg::Location loc_left{float(-width / 2), 0.0, 0.0};
+            cg::Location loc_right{float(width / 2), 0.0, 0.0};
             auto trans = wp->GetTransform();
             trans.TransformPoint(loc_left);
             trans.TransformPoint(loc_right);
@@ -548,6 +549,7 @@ namespace tievsim
 
         lane.left_line.num = lane.left_line.points.size();
         lane.right_line.num = lane.right_line.points.size();
+        return lane;
     }
 
     void MessageManager::PackRoadmarking(SharedPtr<cc::Map> map)
