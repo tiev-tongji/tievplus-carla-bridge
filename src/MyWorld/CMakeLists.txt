@@ -1,6 +1,7 @@
 cmake_minimum_required (VERSION 3.0)
 
 # add search directories
+include_directories(${SRC})
 include_directories(${CMAKE_SOURCE_DIR}/../PythonAPI/carla/dependencies/include)
 include_directories(${CMAKE_SOURCE_DIR}/../PythonAPI/carla/dependencies/include/system)
 link_directories(${CMAKE_SOURCE_DIR}/../PythonAPI/carla/dependencies/lib)

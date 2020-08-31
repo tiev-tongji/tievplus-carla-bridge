@@ -87,9 +87,9 @@ namespace tievsim
 #ifdef USE_LCM
                 mutable lcm::LCM tunnel_;
 #endif
+                MsgChassisCommandSignal chassis_command_;
 
         protected:
-                MsgChassisCommandSignal chassis_command_;
                 MsgCanInfoSignal caninfo_;
                 MsgNavInfoSignal navinfo_;
                 MsgFusionMap fusionmap_;
