@@ -1,82 +1,95 @@
-/*
-PID controller to calculate:
-# aim_steer, in deg
-# aim_throttle
-# aim_brake
-for the vehicle dynamics model in carla, or in Carsim
-according to the input of tiev-plus:
-# aim_acc in m/s^2
-# aim_steer of steering wheel, in deg
-
-2020.7.1 by leoherz_liu@163.com
-*/
 #pragma once
-
 #include <list>
+#include <vector>
 #include <string>
-#include <cmath>
 
-#include "rapidjson/filereadstream.h"
-#include "rapidjson/document.h"
-
-struct PIDParaSet
+namespace simutils
 {
-	double kp;
-	double ki;
-	double kd;
-};
 
-struct PIDDeadZone
-{
-	double dzone_acc_error_throttle;
-	double dzone_acc_error_brake;
-	double dzone_steer_error;
-};
+    class Range
+    {
+    public:
+        Range(double min, double max);
 
-struct PIDLimits
-{
-	double min_throttle;
-	double min_brake;
-	double min_steer;
-	double max_throttle;
-	double max_brake;
-	double max_steer;
-};
+        double get_min() const;
+        double get_max() const;
+        double get_len() const;
 
-struct Control
-{
-	double steer;
-	double throttle;
-	double brake;
-};
+        /**
+         * @brief 判断目标值是否在范围内
+         *
+         * @param target 目标值
+         * @return true 在范围内
+         * @return false 不在范围内
+         */
+        bool InRange(double target) const;
 
-class PIDController
-{
-public:
-	PIDController(const std::string &filename);
-	void tick(double aim_acc, double aim_steer, double veh_acc, double veh_steer, bool direct_steer = true);
+        void set_min(double value);
+        void set_max(double value);
 
-public:
-	Control control;
+    private:
+        double min_;
+        double max_;
+        double len_;
+    };
 
-private:
-	int _integr_update_period;
-	double _time_step;
-	static int _step_count;
-	PIDParaSet _para_steer;
-	PIDParaSet _para_throttle;
-	PIDParaSet _para_brake;
-	PIDDeadZone _para_dzone;
-	PIDLimits _para_limits;
-	std::list<double> _error_acc;
-	std::list<double> _error_steer;
-	double _integr_error_acc;
-	double _integr_error_steer;
+    class PidController
+    {
+    public:
+        /**
+         * @brief Construct a new Pid Controller object
+         *
+         * @param kp 比例系数
+         * @param ki 积分系数
+         * @param kd 微分系数
+         * @param time_step 控制器时间步长, s
+         * @param sep_ratio 积分分离控制系数, 当积分项不在
+         *  sep_ratio * [输出下界，输出上界] 内时, 取消积分
+         * @param output_deadzone 输出死区, e.g. {0.0,0.1}
+         * @param output_limit 输出上下限, e.g. {0.0,1.0}
+         */
+        PidController(double kp, double ki, double kd,
+                      double time_step, double sep_ratio,
+                      Range output_deadzone, Range output_limit);
 
-private:
-	void pull_parameters(const std::string &filename);
-	void integral(double &res, double val);
-	double differential(const std::list<double> &vals);
-	void longitudinal_control(double aim_acc, double veh_acc);
-	void lateral_control(double aim_steer, double veh_steer, bool direct_steer);
-};
+        /**
+         * @brief 计算下一时间步的控制量
+         *
+         * @param error 当前误差, 期望-实际
+         * @return double 控制量
+         */
+        double Tick(double error);
+
+        double get_result() const;
+        double get_kp() const;
+        double get_ki() const;
+        double get_kd() const;
+        double get_sep_ratio() const;
+        const Range &get_output_deadzone() const;
+        const Range &get_output_limit() const;
+
+        void set_kp(double value);
+        void set_ki(double value);
+        void set_kd(double value);
+        void set_sep_ratio(double value);
+        void set_output_deadzone(const Range &range);
+        void set_output_limit(const Range &range);
+
+    private:
+        double Intergrate(double error);
+        double Differential(double error);
+
+    private:
+        double time_step_;
+        double kp_;
+        double ki_;
+        double kd_;
+        double result_;
+        Range output_deadzone_;
+        Range output_limit_;
+        double intergration_;
+        double sep_ratio_; // 积分分离控制比例
+        std::list<double> error_buffer_;
+    };
+
+}; // namespace simutils

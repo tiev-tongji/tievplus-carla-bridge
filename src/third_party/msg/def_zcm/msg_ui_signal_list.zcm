@@ -1,0 +1,37 @@
+struct NamedDoubleArray
+{
+    string visual_type;
+    string name;
+    double val;
+}
+struct NamedFloatArray
+{
+    string visual_type;
+    string name;
+    float val;
+}
+struct NamedIntArray
+{
+    string visual_type;
+    string name;
+    int32_t val;
+}
+struct NamedBoolArray
+{
+    string visual_type;
+    string name;
+    boolean val;
+}
+
+struct MsgUiSignalList
+{
+    int64_t timestamp;  
+    int16_t doubleArraySize;
+    NamedDoubleArray doubleArray[doubleArraySize];
+    int16_t floatArraySize;
+    NamedFloatArray floatArray[floatArraySize];
+    int16_t intArraySize;
+    NamedIntArray intArray[intArraySize];
+    int16_t boolArraySize;
+    NamedBoolArray boolArray[boolArraySize];
+}

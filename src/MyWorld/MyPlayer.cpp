@@ -56,6 +56,6 @@ namespace tievsim
         auto control = veh_->GetControl();
         aim_acc = msg_manager_->chassis_command_.;
         aim_steer = msg_manager_->chassis_command_.;
-        }
+    }
 
 } // namespace tievsim

@@ -6,8 +6,6 @@
 #include <vector>
 #include <string>
 
-#define USE_ZCM
-
 #ifdef USE_ZCM
 #include <zcm/zcm-cpp.hpp>
 #include "MsgCanInfoSignal.hpp"

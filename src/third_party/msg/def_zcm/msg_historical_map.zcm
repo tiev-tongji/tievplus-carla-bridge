@@ -1,0 +1,18 @@
+struct  MsgHistoricalMap
+{
+    //the time when sending this grid [ms]
+    int64_t timestamp; 
+    
+    //utm coordinate, X:east,Y:north
+    double utm_x;       
+    double utm_y;      
+     
+    double angle_head;		//ISO (EAST as 0 CounterClockwise as positive) -PI ~ PI [deg] 
+    
+    float resolution; 		//map resolution in meters   
+    int16_t rows;      		//rows of grid   
+    int16_t cols;      		//cols of grid
+    int16_t center_row;		//row coordinate of grid center 
+    int16_t center_col;		//col coordinate of grid center
+    byte cells[rows][cols]; 	//actual map data, 0x01 obstacle, 0x00 not obstacle 
+}

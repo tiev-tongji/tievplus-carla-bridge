@@ -1,0 +1,45 @@
+struct MsgCanInfoSignal
+{
+	int64_t timestamp;
+
+	byte    drive_mode;//SwitchDriveModeFeedbackInfo (0)Invalid (1)Normal (2)Auto
+	byte    epb_mode;  //EPBDriveModeFeedbackInfo    (0)Invalid (1)Normal (2)Auto
+	byte    eps_mode;  //EPSDriveModeFeedbackInfo    (0)Invalid (1)Normal (2)Auto
+	boolean esp_mode;  //ESPDriveModeFeedbackInfo    (0)Normal (1)Auto
+	boolean gear_mode; //GearDriveModeFeedbackInfo   (0)Normal (1)Auto
+	boolean motor_mode;//MCDriveModeFeedbackInfo     (0)Normal (1)Auto
+
+	byte    eps_permission;//EPSDriveAutoPermissionInfo (0)Permission_Invalid (1)Permission_OK (2)Not_Permission
+	boolean esp_permission;//ESPDriveAutoPermissionInfo (0)Not_Permission (1)Permission_OK
+
+	byte    gear_state;       //CarGearInfo         (0)Invalid     (1)P        (2)R        (3)N       (4)D
+	byte    epb_state;        //EPBInfo             (0)Releasing   (1)Released (2)Applying (3)Applied (4)Info_Error
+	byte    brake_pedal_state;//BrakePedalSignalInfo(0)Not_Pressed (1)Pressed  (2)Info_Error
+
+	double  velocity;      //VelocityInfo              [km/h]
+	double  wheel_speed_fl;//WheelSpeedInfo_front_left [km/h]
+	double  wheel_speed_fr;//WheelSpeedInfo_front_right[km/h]
+	double  wheel_speed_rl;//WheelSpeedInfo_rear_left  [km/h]
+	double  wheel_speed_rr;//WheelSpeedInfo_rear_right [km/h]
+
+	double  yaw_rate;      //YawRateInfo (+)CounterClockwise (-)Clockwise [rad/s]
+
+	double  acceleration_x;//LongitudinalAccelerationInfo[m/(s^2)]
+	double  acceleration_y;//LateralAccelerationInfo ISO_cordinate (+)left (-)right [m/(s^2)]
+
+	double  steer_wheel_angle;  //SteeringWheelAngleInfo              (+)CounterClockwise (-)Clockwise [deg]
+	double  steer_angular_speed;//SteeringWheelAngleRotationSpeedInfo (+)CounterClockwise (-)Clockwise [deg/s]
+
+	double  motor_torque;//MotorTorqueInfo [Nm]
+
+	double  brake_deepness;     //BrakeDeepnessInfo      0-100%
+	double  accelerate_deepness;//AccelerateDeepnessInfo 0-100%
+
+	boolean lamp_turn_l;//LampTurnInfo_left  (0)off (1)on
+	boolean lamp_turn_r;//LampTurnInfo_right (0)off (1)on
+	boolean lamp_brake; //LampBrakeInfo      (0)off (1)on
+
+	double  acceleration_x_desired;   //LongitudinalAccelerationInfo_desired [m/(s^2)]
+	double  steer_wheel_angle_desired;//SteeringWheelAngleInfo_desired (+)CounterClockwise (-)Clockwise [deg]
+	boolean emergency_control_state;  //EmergencyControlDemandFinal (0)Not_Demand (1)Demand
+}

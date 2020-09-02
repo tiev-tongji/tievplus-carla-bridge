@@ -1,0 +1,10 @@
+struct MsgTrafficLightSignal
+{
+    int64_t timestamp; //time when send this msg
+
+    byte  turn_signal; 
+    //bit 0:   1 for right allowed     0 for right disallowed
+    //bit 1:   1 for straight allowed  0 for straight disallowed
+    //bit 2:   1 for left allowed      0 for left disallowed
+    //0x07 by default(all allowed)
+}

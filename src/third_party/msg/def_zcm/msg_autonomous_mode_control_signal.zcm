@@ -1,0 +1,4 @@
+struct MsgAutonomousModeControlSignal
+{
+	byte mode_request;//0:HOLDING,1:OPEN,2:CLOSE
+}
