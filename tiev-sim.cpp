@@ -141,7 +141,7 @@ public:
         msgManager.TUNNEL.subscribe("MsgChassisCommandSignal", &MessageManager::control_handler, &msgManager);
         msgManager.subscribe_all();
 #ifdef ASYNC_MODE
-        msgManager.publish_all_async(100, 100, 20, 20, 20, 20);
+        msgManager.publish_all_async(50, 50, 20, 20, 20, 20);
 #endif
     }
 
@@ -462,8 +462,8 @@ void gameLoop(int16_t freq)
     std::cout << "[INFO] Server API version : " << client.GetServerVersion() << '\n';
 
     // get world, blueprints and map
-    //cc::World carlaWorld = client.LoadWorld(TOWN_NAME);
-    cc::World carlaWorld = client.GetWorld();
+    cc::World carlaWorld = client.LoadWorld(TOWN_NAME);
+    //cc::World carlaWorld = client.GetWorld();
     cc::TrafficManager tm = client.GetInstanceTM();
     MyWorld world(carlaWorld, tm);
     world.setup();
@@ -480,17 +480,17 @@ void gameLoop(int16_t freq)
     world.spawnGnss(sensorOffset);
     auto lidar = world.spawnLidar(sensorOffset);
     //world.msgManager.lidarState = lidar;
-    cg::Transform target1T = makeTransformRelative(egoT, 50, 0, 0);
-    auto npc1 = world.spawnNpc(target1T, "vehicle.audi.tt");
-    //    cg::Transform target2T = makeTransformRelative(egoT, 60, 3.5, 0);
-    //    auto npc2 = world.spawnNpc(target2T, "random");
-    // npc2->SetAutopilot();
+    // cg::Transform target1T = makeTransformRelative(egoT, 50, 0, 0);
+    // auto npc1 = world.spawnNpc(target1T, "vehicle.audi.tt");
+    // cg::Transform target2T = makeTransformRelative(egoT, 60, 3.5, 0);
+    // auto npc2 = world.spawnNpc(target2T, "random");
+    //npc2->SetAutopilot(); // commit this line to make npc2 static
 
     world.init();
 
     PIDController npc1_pid(PID_PARAMETER_FILEPATH);
-    //npc->SetAutopilot(true);
-    //world.spawnNpc(target2T)->SetAutopilot(true);
+    // npc->SetAutopilot(true);
+    // world.spawnNpc(target2T)->SetAutopilot(true);
 
     // game loop
     while (!keyboardIrruption)
@@ -507,7 +507,7 @@ void gameLoop(int16_t freq)
         // npc1_control.hand_brake = false;
         // npc1_control.steer = 0;
         // npc1->ApplyControl(npc1_control);
-        //world.forceLaneChange(npc, 2, true);
+        // world.forceLaneChange(npc, 2, true);
         std::this_thread::sleep_until(time_point);
     }
 }

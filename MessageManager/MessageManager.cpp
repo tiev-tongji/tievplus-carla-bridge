@@ -385,38 +385,70 @@ PredictedObject MessageManager::pack_one_object(cc::ActorPtr pActor)
 	{
 		vertex = unreal2vehframe(locEgo, vertex, rotEgo.yaw);
 	}
+	std::vector<size_t> indexs_l2r;
 	for (int i = 0; i < 4; ++i)
 	{
-		if (vertexs[i].y >= predObj.trajectory_point[1][0])
+		if (indexs_l2r.empty())
 		{
-			if (vertexs[i].x <= predObj.trajectory_point[0][0])
-			{
-				// left-bottom vertex
-				predObj.bounding_box[0][1] = vertexs[i].x;
-				predObj.bounding_box[1][1] = vertexs[i].y;
-			}
-			else
-			{
-				// left-up vertex
-				predObj.bounding_box[0][0] = vertexs[i].x;
-				predObj.bounding_box[1][0] = vertexs[i].y;
-			}
+			indexs_l2r.push_back(i);
+		}
+		else if (vertexs[i].y < vertexs[indexs_l2r.back()].y)
+		{
+			indexs_l2r.push_back(i);
 		}
 		else
 		{
-			if (vertexs[i].x <= predObj.trajectory_point[0][0])
-			{
-				// right-bottom vertex
-				predObj.bounding_box[0][3] = vertexs[i].x;
-				predObj.bounding_box[1][3] = vertexs[i].y;
-			}
-			else
-			{
-				// right-up vertex
-				predObj.bounding_box[0][2] = vertexs[i].x;
-				predObj.bounding_box[1][2] = vertexs[i].y;
-			}
+			indexs_l2r.insert(indexs_l2r.begin(), i);
 		}
+		// if (vertexs[i].y >= predObj.trajectory_point[1][0])
+		// {
+		// 	if (vertexs[i].x <= predObj.trajectory_point[0][0])
+		// 	{
+		// 		// left-bottom vertex
+		// 		predObj.bounding_box[0][1] = vertexs[i].x;
+		// 		predObj.bounding_box[1][1] = vertexs[i].y;
+		// 	}
+		// 	else
+		// 	{
+		// 		// left-up vertex
+		// 		predObj.bounding_box[0][0] = vertexs[i].x;
+		// 		predObj.bounding_box[1][0] = vertexs[i].y;
+		// 	}
+		// }
+		// else
+		// {
+		// 	if (vertexs[i].x <= predObj.trajectory_point[0][0])
+		// 	{
+		// 		// right-bottom vertex
+		// 		predObj.bounding_box[0][3] = vertexs[i].x;
+		// 		predObj.bounding_box[1][3] = vertexs[i].y;
+		// 	}
+		// 	else
+		// 	{
+		// 		// right-up vertex
+		// 		predObj.bounding_box[0][2] = vertexs[i].x;
+		// 		predObj.bounding_box[1][2] = vertexs[i].y;
+		// 	}
+		// }
+	}
+	if (vertexs[indexs_l2r[0]].x < vertexs[indexs_l2r[1]].x)
+	{
+		auto temp = indexs_l2r[0];
+		indexs_l2r[0] = indexs_l2r[1];
+		indexs_l2r[1] = temp;
+	}
+	if (vertexs[indexs_l2r[2]].x < vertexs[indexs_l2r[3]].x)
+	{
+		auto temp = indexs_l2r[2];
+		indexs_l2r[2] = indexs_l2r[3];
+		indexs_l2r[3] = temp;
+	}
+	printf("============================\n");
+	for (size_t i = 0; i < 4; ++i)
+	{
+		predObj.bounding_box[0][i] = vertexs[indexs_l2r[i]].x;
+		predObj.bounding_box[1][i] = vertexs[indexs_l2r[i]].y;
+		printf("vertexs: (%f, %f)\n", predObj.bounding_box[0][i], predObj.bounding_box[1][i]);
 	}
 	return predObj;
 };
@@ -514,7 +546,7 @@ void MessageManager::pack_fusionmap_raster()
 					FUSIONMAP.map_cells[x][y] |= 0b00000010;
 					++rastered_point_num;
 					bool isHistory = true;
-					bool isMoving = (fabs(obj.velocity) > 100);
+					bool isMoving = (fabs(obj.velocity) > 0.1);
 					if (isHistory)
 						FUSIONMAP.map_cells[x][y] |= 0b00000001;
 					if (isMoving)
@@ -914,7 +946,7 @@ void MessageManager::pack_roadmarking(const SharedPtr<cc::Waypoint> current, cc:
 
 	auto t2 = std::chrono::steady_clock::now();
 	double dr_ms_pack_roadmarking = std::chrono::duration<double, std::milli>(t2 - t1).count();
-	std::cout << "time to pack roadmarkinglist: " << dr_ms_pack_roadmarking << std::endl;
+	//std::cout << "time to pack roadmarkinglist: " << dr_ms_pack_roadmarking << std::endl;
 
 	_mutex.unlock();
 }
