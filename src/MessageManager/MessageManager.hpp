@@ -1,6 +1,6 @@
 #pragma once
 #include <list>
-#include "MessageManagerBase.hpp"
+#include "MessageManager/MessageManagerBase.hpp"
 #include "simutils.hpp"
 
 #include "GeographicLib/GeoCoords.hpp"

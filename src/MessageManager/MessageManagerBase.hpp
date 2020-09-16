@@ -95,13 +95,13 @@ namespace tievsim
                 MsgRoadMarkingList roadmarking_list_;
                 MsgTrafficLightSignal trafficlight_;
 
-                std::mutex chassis_command_mutex_;
-                std::mutex caninfo_mutex_;
-                std::mutex navinfo_mutex_;
-                std::mutex fusionmap_mutex_;
-                std::mutex objectlist_mutex_;
-                std::mutex roadmarking_mutex_;
-                std::mutex trafficlight_mutex_;
+                mutable std::mutex chassis_command_mutex_;
+                mutable std::mutex caninfo_mutex_;
+                mutable std::mutex navinfo_mutex_;
+                mutable std::mutex fusionmap_mutex_;
+                mutable std::mutex objectlist_mutex_;
+                mutable std::mutex roadmarking_mutex_;
+                mutable std::mutex trafficlight_mutex_;
 
         private:
                 std::vector<std::thread> pub_threads_;

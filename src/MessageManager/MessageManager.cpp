@@ -3,7 +3,7 @@
 // rotation around Z (yaw): clockwise as positive
 // rotation around X and Y (roll and pitch): counter-clockwise as positive
 
-#include "MessageManager.hpp"
+#include "MessageManager/MessageManager.hpp"
 
 using carla::SharedPtr;
 using std::list;

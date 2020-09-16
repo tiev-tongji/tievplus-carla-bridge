@@ -18,7 +18,7 @@ namespace tievsim
     {
     public:
         MyWorld() = default;
-        explicit MyWorld(SharedPtr<cc::World> world);
+        explicit MyWorld(carla::SharedPtr<cc::World> world);
         virtual ~MyWorld();
 
         void SpawnPlayer();

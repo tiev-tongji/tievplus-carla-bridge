@@ -1,6 +1,11 @@
 #pragma once
+#include <map>
+
 #include "MessageManager/MessageManager.hpp"
+#include "VehicleController/TievplusController.hpp"
+
 #include "carla/client/Vehicle.h"
+#include "carla/client/Map.h"
 
 namespace tievsim
 {
@@ -10,16 +15,19 @@ namespace tievsim
     class MyPlayer
     {
     public:
-        MyPlayer(carla::SharedPtr<cc::World> world);
+        MyPlayer();
         virtual ~MyPlayer() = default;
 
         carla::SharedPtr<cc::Vehicle> get_veh();
-        carla::SharedPtr<cc::World> get_world();
 
         void SetAutoPilot();
         void SetManualControl();
         void SetTievControl();
-        void Tick();
+
+        void ControlTick();
+        void ClientSideSensorTick(
+            int frame_duration_objectlist, carla::SharedPtr<cc::ActorList> actor_list,
+            int frame_duration_roadmarking, carla::SharedPtr<cc::Map> map);
 
         void AddImu();
         void AddGnss();
@@ -28,21 +36,21 @@ namespace tievsim
         void AddCameraDepth();
 
         void Listen();
-        void StopListen();
+        void StopListen(const string &name = "all");
 
     private:
-        void ControlTick();
         void ManualControlTick();
         void NoneControlTick();
         void TievControlTick();
-        void ClientSideSensorTick();
 
-        carla::SharedPtr<cc::World> world_;
         carla::SharedPtr<cc::Vehicle> veh_;
         carla::SharedPtr<MessageManager> msg_manager_;
-        carla::SharedPtr<PidController> pid_controller_;
-        std::vector<carla::SharedPtr<cc::Sensor>> sensors_;
+        carla::SharedPtr<TievplusController> pid_controller_;
+        std::map<string, carla::SharedPtr<cc::Sensor>> sensors_;
 
         std::string driver_;
-    }
+
+        int cnt_objectlist_;
+        int cnt_roadmarking_;
+    };
 } // namespace tievsim

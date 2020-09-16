@@ -12,7 +12,7 @@ namespace tievsim
     public:
         explicit TievplusController(const std::string &parameter_filepath);
 
-        void Tick(double error_lon, double error_steer);
+        void Tick(double error_lon, double aim_steer);
 
         double steer;
 

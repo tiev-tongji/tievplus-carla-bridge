@@ -1,15 +1,11 @@
 cmake_minimum_required (VERSION 3.0)
 
-# add search directories
-include_directories(${SRC})
-include_directories(${CMAKE_SOURCE_DIR}/../PythonAPI/carla/dependencies/include)
-include_directories(${CMAKE_SOURCE_DIR}/../PythonAPI/carla/dependencies/include/system)
-link_directories(${CMAKE_SOURCE_DIR}/../PythonAPI/carla/dependencies/lib)
+# if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+#     target_compile_definitions(msg_manager PUBLIC "USE_ZCM")
+# endif()
+# if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+#     target_compile_definitions(msg_manager PUBLIC "USE_LCM")
+# endif()
 
 # compile library
-add_library (myworld "MyWorld.cpp")
-
-# link
-target_link_libraries(myworld carla_client
-                      Detour DetourCrowd boost_filesystem
-                      Recast rpc png jpeg tiff)
+add_library (myworld "MyWorld.cpp" "MyPlayer.cpp")

@@ -1,4 +1,4 @@
-#include "MessageManagerBase.hpp"
+#include "MessageManager/MessageManagerBase.hpp"
 
 using namespace std::chrono_literals;
 using std::string;
@@ -12,7 +12,7 @@ namespace tievsim
     {
         chassis_command_.longitudinal_acceleration_command = 0.0;
         chassis_command_.steer_wheel_angle_command = 0.0;
-        chassis_command_.timestamp = 0.0;
+        chassis_command_.timestamp = 0;
         chassis_command_.car_gear_command = 1;                // 驻车档
         chassis_command_.autonomous_mode_control_command = 2; // 非自动驾驶模式
     };
@@ -75,7 +75,7 @@ namespace tievsim
     {
         while (!need_stop_)
         {
-            TUNNEL.handle();
+            tunnel_.handle();
         }
     }
 

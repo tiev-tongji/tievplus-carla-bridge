@@ -31,9 +31,9 @@ namespace tievsim
         fclose(fp);
     }
 
-    void TievplusController::Tick(double error_lon, double error_steer)
+    void TievplusController::Tick(double error_lon, double aim_steer)
     {
-        steer = -error_steer / 500;
+        steer = -aim_steer / 500;
         steer = steer < -1 ? -1 : steer;
         steer = steer > 1 ? 1 : steer;
 
