@@ -1,5 +1,2 @@
 build/
 .vscode/
-Eigen/
-LibCarla/
-lcm/

@@ -1,7 +1,7 @@
 #pragma once
 #include <list>
 #include "MessageManagerBase.hpp"
-#include "utils.hpp"
+#include "simutils.hpp"
 
 #include "GeographicLib/GeoCoords.hpp"
 #include "rapidjson/filereadstream.h"
@@ -51,6 +51,10 @@ namespace tievsim
 
         std::list<carla::SharedPtr<cc::Waypoint>>
         GetSlice(carla::SharedPtr<cc::Waypoint> current, int *left_lane_num, int *right_lane_num);
+
+        void ResetFusionmap();
+        void ResetRoadmarking();
+        void ResetObjectlist();
 
         // 参数表
     private:

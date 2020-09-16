@@ -8,7 +8,7 @@
             "z": -0.526
         },
         "wheel_radius": 33,
-        "max_steer_angle": 54,
+        "max_steer_angle": 27,
         "max_steerwheel_angle": 500
     },
     "objectlist": {
@@ -20,10 +20,10 @@
         "num_rows": 1001,
         "num_columns": 401,
         "center_row": 850,
-        "center_column": 200,
+        "center_column": 200
     },
     "roadmarking": {
         "distance_laneline_points": 1,
-        "num_laneline_points": 50
+        "num_laneline_points": 100
     }
 }

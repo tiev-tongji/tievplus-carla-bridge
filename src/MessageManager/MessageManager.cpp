@@ -12,7 +12,7 @@ using std::vector;
 
 namespace tievsim
 {
-    using namespace utils;
+    using namespace simutils;
 
     MessageManager::MessageManager(const string &url, const string &parameter_filepath)
         : MessageManagerBase(url) { PullParameter(parameter_filepath); }
@@ -25,7 +25,7 @@ namespace tievsim
             printf("[Error] cannot open %s.\n", filepath.c_str());
             return;
         }
-        printf("[INFO] controller use %s.\n", filepath.c_str());
+        printf("[INFO] message manager use %s.\n", filepath.c_str());
         char read_buffer[1024];
         rapidjson::FileReadStream is(fp, read_buffer, sizeof(read_buffer));
         rapidjson::Document d;
@@ -249,6 +249,7 @@ namespace tievsim
             trans_actor.TransformPoint(vertex);
             vertex = ToVehFrame(trans_ego, vertex);
         }
+        // 碰撞包围盒角点排序
         vector<size_t> ordered(4); // right-top, right-bottom, left-top, left-bottom
         for (size_t i = 0; i < 4; ++i)
         {
@@ -295,10 +296,7 @@ namespace tievsim
     void MessageManager::PackObjectlist(const cc::ActorList &actors)
     {
         std::lock_guard<std::mutex> objectlist_lock(objectlist_mutex_, std::adopt_lock);
-        object_list_.time_stamp = navinfo_.timestamp;
-        object_list_.data_source = 1;
-        object_list_.object_count = 0;
-        object_list_.predicted_object.clear();
+        ResetObjectlist();
         for (auto actor : actors)
         {
             if (actor->GetId() == ego_car_->GetId())
@@ -367,7 +365,7 @@ namespace tievsim
                     {
                         // bit-0 history obstacle, bit-1 lidar obstacle, bit-2 moving obstacle
                         fusionmap_.map_cells[x][y] |= 0b00000010;
-                        bool isMoving = (fabs(obj.velocity) > 100);
+                        bool isMoving = (fabs(obj.velocity) > 0.5);
                         if (isMoving)
                         {
                             fusionmap_.map_cells[x][y] |= 0b00000100;
@@ -383,18 +381,7 @@ namespace tievsim
     void MessageManager::PackFusionmap(const csd::LidarMeasurement &lidar_msg)
     {
         std::lock_guard<std::mutex> fusionmap_lock(fusionmap_mutex_, std::adopt_lock);
-
-        fusionmap_.map_cells.assign(kMapRowNum, vector<uint8_t>(kMapColNum));
-        fusionmap_.time_stamp = navinfo_.timestamp;
-        fusionmap_.car_utm_position_x = navinfo_.utm_x;
-        fusionmap_.car_utm_position_y = navinfo_.utm_y;
-        fusionmap_.car_heading = navinfo_.angle_head;
-        fusionmap_.map_resolution = kMapResolution;
-        fusionmap_.map_row_num = kMapRowNum;
-        fusionmap_.map_column_num = kMapColNum;
-        fusionmap_.car_center_column = kMapColCenter;
-        fusionmap_.car_center_row = kMapRowCenter;
-
+        ResetFusionmap();
         RasterFusionmap();
     }
 
@@ -563,13 +550,15 @@ namespace tievsim
 
         auto t1 = std::chrono::steady_clock::now();
 
+        ResetRoadmarking();
+
+        // 车道线
         auto current = map->GetWaypoint(ego_car_->GetLocation());
         if (current->IsJunction())
         {
             return;
         }
 
-        // 车道线
         int left_lane_num = 0;
         int right_lane_num = 0;
         auto slice = GetSlice(current, &left_lane_num, &right_lane_num);
@@ -581,31 +570,6 @@ namespace tievsim
             roadmarking_list_.lanes.push_back(lane);
         }
 
-        roadmarking_list_.stop_line.exist = 0;
-        roadmarking_list_.stop_line.num = 1;
-        roadmarking_list_.stop_line.stop_points.push_back(LinePoint{});
-        roadmarking_list_.stop_line.distance = -1;
-
-        roadmarking_list_.zebra.exist = 0;
-        roadmarking_list_.zebra.num = 1;
-        roadmarking_list_.zebra.zebra_points.push_back(LinePoint{});
-        roadmarking_list_.zebra.distance = -1;
-
-        roadmarking_list_.curb.exist = 0;
-        roadmarking_list_.curb.num = 1;
-        roadmarking_list_.curb.curb_points.push_back(LinePoint{});
-        roadmarking_list_.curb.distance = -1;
-
-        roadmarking_list_.no_parking.exist = 0;
-        roadmarking_list_.no_parking.num = 1;
-        roadmarking_list_.no_parking.no_parking_points.push_back(LinePoint{});
-        roadmarking_list_.no_parking.distance = -1;
-
-        roadmarking_list_.chevron.exist = 0;
-        roadmarking_list_.chevron.num = 1;
-        roadmarking_list_.chevron.chevron_points.push_back(LinePoint{});
-        roadmarking_list_.chevron.distance = -1;
-
         auto t2 = std::chrono::steady_clock::now();
         double dr_ms_pack_roadmarking = std::chrono::duration<double, std::milli>(t2 - t1).count();
         //std::cout << "time to pack roadmarkinglist: " << dr_ms_pack_roadmarking << std::endl;
@@ -614,6 +578,60 @@ namespace tievsim
     void MessageManager::PackTrafficlight()
     {
         ;
+    }
+
+    void MessageManager::ResetFusionmap()
+    {
+        fusionmap_.map_cells.assign(kMapRowNum, vector<uint8_t>(kMapColNum));
+        fusionmap_.time_stamp = navinfo_.timestamp;
+        fusionmap_.car_utm_position_x = navinfo_.utm_x;
+        fusionmap_.car_utm_position_y = navinfo_.utm_y;
+        fusionmap_.car_heading = navinfo_.angle_head;
+        fusionmap_.map_resolution = kMapResolution;
+        fusionmap_.map_row_num = kMapRowNum;
+        fusionmap_.map_column_num = kMapColNum;
+        fusionmap_.car_center_column = kMapColCenter;
+        fusionmap_.car_center_row = kMapRowCenter;
+    }
+
+    void MessageManager::ResetRoadmarking()
+    {
+        roadmarking_list_.num = 0;
+        roadmarking_list_.lanes.clear();
+        roadmarking_list_.current_lane_id = 0;
+
+        roadmarking_list_.stop_line.exist = 0;
+        roadmarking_list_.stop_line.num = 0;
+        roadmarking_list_.stop_line.stop_points.clear();
+        roadmarking_list_.stop_line.distance = -1;
+
+        roadmarking_list_.zebra.exist = 0;
+        roadmarking_list_.zebra.num = 0;
+        roadmarking_list_.zebra.zebra_points.clear();
+        roadmarking_list_.zebra.distance = -1;
+
+        roadmarking_list_.curb.exist = 0;
+        roadmarking_list_.curb.num = 0;
+        roadmarking_list_.curb.curb_points.clear();
+        roadmarking_list_.curb.distance = -1;
+
+        roadmarking_list_.no_parking.exist = 0;
+        roadmarking_list_.no_parking.num = 0;
+        roadmarking_list_.no_parking.no_parking_points.clear();
+        roadmarking_list_.no_parking.distance = -1;
+
+        roadmarking_list_.chevron.exist = 0;
+        roadmarking_list_.chevron.num = 0;
+        roadmarking_list_.chevron.chevron_points.clear();
+        roadmarking_list_.chevron.distance = -1;
+    }
+
+    void MessageManager::ResetObjectlist()
+    {
+        object_list_.time_stamp = navinfo_.timestamp;
+        object_list_.data_source = 1;
+        object_list_.object_count = 0;
+        object_list_.predicted_object.clear();
     }
 
 } // namespace tievsim

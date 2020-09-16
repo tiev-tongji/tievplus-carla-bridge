@@ -3,7 +3,7 @@ cmake_minimum_required (VERSION 3.0)
 project(tiev-sim)
 
 set(SRC ${CMAKE_SOURCE_DIR}/src)
-set(THIRD_PARTY ${CMAKE_SOURCE_DIR}/src/third_party)
+set(THIRD_PARTY ${CMAKE_SOURCE_DIR}/third_party)
 
 # path
 include_directories(${SRC})
@@ -23,13 +23,6 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
 endif()
 
 # add sub-target directories
-add_subdirectory(${SRC}/PIDController)
+add_subdirectory(${SRC}/VehicleController)
 add_subdirectory(${SRC}/MessageManager)
 add_subdirectory(${SRC}/MyWorld)
-
-# compile
-add_executable (tiev-sim "tiev-sim.cpp")
-
-# link
-#target_link_libraries (tiev-sim pid_controller msg_manager sfml-graphics sfml-window sfml-system)
-target_link_libraries (tiev-sim pid_controller msg_manager)

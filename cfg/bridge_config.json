@@ -1,0 +1,16 @@
+{
+    "url": "updm://239.255.76.67:7667?ttl=1",
+    "carla": {
+        "server_host": "127.0.0.1",
+        "server_port": 2000,
+        "tm_port": 8000,
+        "client_worker_threads": 2,
+        "map": "TOWN06",
+        "weather": "",
+        "sync_mode": true,
+        "sim_freq": 50
+    },
+    "game": {
+        "bridge_freq": 50
+    }
+}

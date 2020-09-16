@@ -91,31 +91,37 @@ namespace tievsim
 
     void MessageManagerBase::PublishCaninfo() const
     {
+        std::lock_guard<std::mutex> caninfo_lock(caninfo_mutex_, std::adopt_lock);
         tunnel_.publish("CANINFO", &caninfo_);
     }
 
     void MessageManagerBase::PublishNavinfo() const
     {
+        std::lock_guard<std::mutex> navinfo_lock(navinfo_mutex_, std::adopt_lock);
         tunnel_.publish("NAVINFO", &navinfo_);
     }
 
     void MessageManagerBase::PublishFusionmap() const
     {
+        std::lock_guard<std::mutex> fusionmap_lock(fusionmap_mutex_, std::adopt_lock);
         tunnel_.publish("FUSIONMAP", &fusionmap_);
     }
 
     void MessageManagerBase::PublishObjectlist() const
     {
+        std::lock_guard<std::mutex> objectlist_lock(objectlist_mutex_, std::adopt_lock);
         tunnel_.publish("PREDICTEDOBJECT", &object_list_);
     }
 
     void MessageManagerBase::PublishRoadmarking() const
     {
+        std::lock_guard<std::mutex> roadmarking_lock(roadmarking_mutex_, std::adopt_lock);
         tunnel_.publish("ROADMARKINGLIST", &roadmarking_list_);
     }
 
     void MessageManagerBase::PublishTrafficlight() const
     {
+        std::lock_guard<std::mutex> trafficlight_lock(trafficlight_mutex_, std::adopt_lock);
         tunnel_.publish("TRAFFICLIGHTSIGNAL", &trafficlight_);
     }
 
