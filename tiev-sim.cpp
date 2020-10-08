@@ -13,7 +13,8 @@
 
 static const string HOST = "127.0.0.1"; // sercer host.
 static const uint16_t PORT = 2000;      // server post.
-static const size_t WORKER_THREADS = 0ULL;
+//static const size_t WORKER_THREADS = 0ULL;
+static const size_t WORKER_THREADS = 2;
 static const string ZCM_URL = "udpm://239.255.76.67:7667?ttl=1";
 static const string PID_PARAMETER_FILEPATH = "../cfg/pid_parameters.json";
 static const string TOWN_NAME = "Town06";
@@ -77,7 +78,7 @@ public:
                 std::cout << "[INFO] Destroying sensor " << s->GetDisplayId() << std::endl;
                 s->Stop();
                 s->Destroy();
-            }
+                            }
         }
         for (auto npc : npcList)
         {
@@ -141,7 +142,7 @@ public:
         msgManager.TUNNEL.subscribe("MsgChassisCommandSignal", &MessageManager::control_handler, &msgManager);
         msgManager.subscribe_all();
 #ifdef ASYNC_MODE
-        msgManager.publish_all_async(50, 50, 20, 20, 20, 20);
+        msgManager.publish_all_async(200, 200, 20, 20, 20, 20);
 #endif
     }
 
@@ -157,6 +158,7 @@ public:
             {
                 s->Listen([this](auto data) {
                     auto gnssMsg = static_pointer_cast<csd::GnssMeasurement>(data);
+
                     this->msgManager.pack_navinfo(*gnssMsg);
                 });
             }
@@ -173,9 +175,9 @@ public:
             }
             else if (start_with(s->GetTypeId(), "sensor.camera.semantic_segmentation"))
             {
-                ;
-            }
-            else if (start_with(s->GetTypeId(), "sensor.camera.depth"))
+                ; 
+    }
+                else if (start_with(s->GetTypeId(), "sensor.camera.depth"))
             {
                 ;
             }
@@ -453,6 +455,20 @@ public:
     PIDController pidController;
 };
 
+void ControlNpc(SharedPtr<cc::Vehicle> npc, double aim_speed, PIDController &npc_pid)
+{
+    //dynamic obstacle
+    auto vel = npc->GetVelocity();
+    double npc_speed = norm2(vel.x, vel.y, vel.z);
+    npc_pid.tick(1.0, 0, npc_speed, 0, true);
+    auto npc_control = npc->GetControl();
+    npc_control.throttle = npc_pid.control.throttle;
+    npc_control.brake = npc_pid.control.brake;
+    npc_control.hand_brake = false;
+    npc_control.steer = 0;
+    npc->ApplyControl(npc_control);
+}
+
 void gameLoop(int16_t freq)
 {
     // connect to server
@@ -479,35 +495,28 @@ void gameLoop(int16_t freq)
     cg::Transform sensorOffset = makeTransform(2.7, 0, 3.5, 0, 0, 0);
     world.spawnGnss(sensorOffset);
     auto lidar = world.spawnLidar(sensorOffset);
-    //world.msgManager.lidarState = lidar;
-    // cg::Transform target1T = makeTransformRelative(egoT, 50, 0, 0);
-    // auto npc1 = world.spawnNpc(target1T, "vehicle.audi.tt");
-    // cg::Transform target2T = makeTransformRelative(egoT, 60, 3.5, 0);
-    // auto npc2 = world.spawnNpc(target2T, "random");
-    //npc2->SetAutopilot(); // commit this line to make npc2 static
+    
+    cg::Transform target1T = makeTransformRelative(egoT, 50, 2, 0);
+    auto npc1 = world.spawnNpc(target1T, "vehicle.audi.tt");
+    cg::Transform target2T = makeTransformRelative(egoT, 50, 5.5, 0);
+    //auto npc2 = world.spawnNpc(target2T, "random");
+    cg::Transform target3T = makeTransformRelative(egoT, 50, -1.5, 0);
+    auto npc3 = world.spawnNpc(target3T);
 
     world.init();
 
     PIDController npc1_pid(PID_PARAMETER_FILEPATH);
-    // npc->SetAutopilot(true);
-    // world.spawnNpc(target2T)->SetAutopilot(true);
+    PIDController npc2_pid(PID_PARAMETER_FILEPATH);
+    PIDController npc3_pid(PID_PARAMETER_FILEPATH);
 
     // game loop
     while (!keyboardIrruption)
     {
         auto time_point = std::chrono::steady_clock::now() + std::chrono::milliseconds(1000 / freq);
         world.tick();
-        //dynamic obstacle
-        // auto vel = npc1->GetVelocity();
-        // double npc1_speed = norm2(vel.x, vel.y, vel.z);
-        // npc1_pid.tick(2.0, 0, npc1_speed, 0, true);
-        // auto npc1_control = npc1->GetControl();
-        // npc1_control.throttle = npc1_pid.control.throttle;
-        // npc1_control.brake = npc1_pid.control.brake;
-        // npc1_control.hand_brake = false;
-        // npc1_control.steer = 0;
-        // npc1->ApplyControl(npc1_control);
-        // world.forceLaneChange(npc, 2, true);
+        ControlNpc(npc1, 50, npc1_pid);
+        //ControlNpc(npc2, 20, npc1_pid);
+        ControlNpc(npc3, 50, npc3_pid);
         std::this_thread::sleep_until(time_point);
     }
 }

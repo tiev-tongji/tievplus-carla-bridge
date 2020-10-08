@@ -6,7 +6,7 @@
     "kd_steer": 0,
     "min_steer": 0,
     "max_steer": 500,
-    "kp_throttle": 0.1,
+    "kp_throttle": 0.2,
     "ki_throttle": 0.1,
     "kd_throttle": 0,
     "min_throttle": 0,

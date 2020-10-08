@@ -171,7 +171,7 @@ inline bool checkLaneType(carla::road::Lane::LaneType type)
 		return true;
 		break;
 	case LaneType::Shoulder:
-		return true;
+		return false;
 		break;
 	default:
 		return false;
