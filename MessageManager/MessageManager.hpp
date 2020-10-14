@@ -48,6 +48,8 @@ ZeroCM Message Manager
 #include <GeographicLib/GeoCoords.hpp>
 #include <eigen3/Eigen/Eigen>
 
+#include "common/coordinate_converter/coordinate_converter.h"
+
 #include "carla/client/Client.h"
 #include "carla/client/World.h"
 #include "carla/client/Map.h"

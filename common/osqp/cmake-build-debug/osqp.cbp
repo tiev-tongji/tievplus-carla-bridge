@@ -1,0 +1,859 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="osqp"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="gcc"/>
+		<Option virtualFolders="CMake Files\;CMake Files\configure\;CMake Files\configure\cmake\;CMake Files\src\;CMake Files\include\;CMake Files\lin_sys\;CMake Files\lin_sys\direct\;CMake Files\lin_sys\direct\qdldl\;CMake Files\lin_sys\direct\qdldl\qdldl_sources\;CMake Files\lin_sys\direct\qdldl\qdldl_sources\configure\;CMake Files\lin_sys\direct\qdldl\qdldl_sources\configure\cmake\;CMake Files\lin_sys\direct\pardiso\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="/home/autolab/planner_env/osqp/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="install/strip">
+				<Option working_dir="/home/autolab/planner_env/osqp/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 install/strip"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="install/local">
+				<Option working_dir="/home/autolab/planner_env/osqp/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 install/local"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="install">
+				<Option working_dir="/home/autolab/planner_env/osqp/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 install"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="osqp">
+				<Option output="/home/autolab/planner_env/osqp/cmake-build-debug/out/libosqp.so" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/autolab/planner_env/osqp/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="3"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl"/>
+					<Add directory="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl/qdldl_sources/include"/>
+					<Add directory="/home/autolab/planner_env/osqp/lin_sys/direct/pardiso"/>
+					<Add directory="/home/autolab/planner_env/osqp/include"/>
+					<Add directory="/usr/include/c++/5"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/5"/>
+					<Add directory="/usr/include/c++/5/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 osqp"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="osqp/fast">
+				<Option output="/home/autolab/planner_env/osqp/cmake-build-debug/out/libosqp.so" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/autolab/planner_env/osqp/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="3"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl"/>
+					<Add directory="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl/qdldl_sources/include"/>
+					<Add directory="/home/autolab/planner_env/osqp/lin_sys/direct/pardiso"/>
+					<Add directory="/home/autolab/planner_env/osqp/include"/>
+					<Add directory="/usr/include/c++/5"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/5"/>
+					<Add directory="/usr/include/c++/5/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 osqp/fast"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="edit_cache">
+				<Option working_dir="/home/autolab/planner_env/osqp/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 edit_cache"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="osqpstatic">
+				<Option output="/home/autolab/planner_env/osqp/cmake-build-debug/out/libosqp.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/autolab/planner_env/osqp/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl"/>
+					<Add directory="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl/qdldl_sources/include"/>
+					<Add directory="/home/autolab/planner_env/osqp/lin_sys/direct/pardiso"/>
+					<Add directory="/home/autolab/planner_env/osqp/include"/>
+					<Add directory="/usr/include/c++/5"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/5"/>
+					<Add directory="/usr/include/c++/5/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 osqpstatic"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="osqpstatic/fast">
+				<Option output="/home/autolab/planner_env/osqp/cmake-build-debug/out/libosqp.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/autolab/planner_env/osqp/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl"/>
+					<Add directory="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl/qdldl_sources/include"/>
+					<Add directory="/home/autolab/planner_env/osqp/lin_sys/direct/pardiso"/>
+					<Add directory="/home/autolab/planner_env/osqp/include"/>
+					<Add directory="/usr/include/c++/5"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/5"/>
+					<Add directory="/usr/include/c++/5/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 osqpstatic/fast"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="list_install_components">
+				<Option working_dir="/home/autolab/planner_env/osqp/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 list_install_components"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="osqp_demo">
+				<Option output="/home/autolab/planner_env/osqp/cmake-build-debug/out/osqp_demo" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/autolab/planner_env/osqp/cmake-build-debug/out"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/home/autolab/planner_env/osqp/include"/>
+					<Add directory="/usr/include/c++/5"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/5"/>
+					<Add directory="/usr/include/c++/5/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 osqp_demo"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="osqp_demo/fast">
+				<Option output="/home/autolab/planner_env/osqp/cmake-build-debug/out/osqp_demo" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/autolab/planner_env/osqp/cmake-build-debug/out"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/home/autolab/planner_env/osqp/include"/>
+					<Add directory="/usr/include/c++/5"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/5"/>
+					<Add directory="/usr/include/c++/5/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 osqp_demo/fast"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="rebuild_cache">
+				<Option working_dir="/home/autolab/planner_env/osqp/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="linsys_pardiso">
+				<Option output="/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/CMakeFiles/linsys_pardiso.dir/linsys_pardiso.objlib" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/home/autolab/planner_env/osqp/lin_sys"/>
+					<Add directory="/home/autolab/planner_env/osqp/lin_sys/direct/pardiso"/>
+					<Add directory="/home/autolab/planner_env/osqp/include"/>
+					<Add directory="/usr/include/c++/5"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/5"/>
+					<Add directory="/usr/include/c++/5/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/Makefile&quot;  VERBOSE=1 linsys_pardiso"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="linsys_pardiso/fast">
+				<Option output="/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/CMakeFiles/linsys_pardiso.dir/linsys_pardiso.objlib" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/home/autolab/planner_env/osqp/lin_sys"/>
+					<Add directory="/home/autolab/planner_env/osqp/lin_sys/direct/pardiso"/>
+					<Add directory="/home/autolab/planner_env/osqp/include"/>
+					<Add directory="/usr/include/c++/5"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/5"/>
+					<Add directory="/usr/include/c++/5/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/Makefile&quot;  VERBOSE=1 linsys_pardiso/fast"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="linsys_qdldl">
+				<Option output="/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/CMakeFiles/linsys_qdldl.dir/linsys_qdldl.objlib" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/home/autolab/planner_env/osqp/lin_sys"/>
+					<Add directory="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl"/>
+					<Add directory="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl/amd/include"/>
+					<Add directory="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl/qdldl_sources/include"/>
+					<Add directory="/home/autolab/planner_env/osqp/include"/>
+					<Add directory="/usr/include/c++/5"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/5"/>
+					<Add directory="/usr/include/c++/5/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/Makefile&quot;  VERBOSE=1 linsys_qdldl"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="linsys_qdldl/fast">
+				<Option output="/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/CMakeFiles/linsys_qdldl.dir/linsys_qdldl.objlib" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/home/autolab/planner_env/osqp/lin_sys"/>
+					<Add directory="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl"/>
+					<Add directory="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl/amd/include"/>
+					<Add directory="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl/qdldl_sources/include"/>
+					<Add directory="/home/autolab/planner_env/osqp/include"/>
+					<Add directory="/usr/include/c++/5"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/5"/>
+					<Add directory="/usr/include/c++/5/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/Makefile&quot;  VERBOSE=1 linsys_qdldl/fast"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="qdldlstatic">
+				<Option output="/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/out/libqdldl.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/home/autolab/planner_env/osqp/lin_sys"/>
+					<Add directory="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl/qdldl_sources/include"/>
+					<Add directory="/usr/include/c++/5"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/5"/>
+					<Add directory="/usr/include/c++/5/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/Makefile&quot;  VERBOSE=1 qdldlstatic"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="qdldlstatic/fast">
+				<Option output="/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/out/libqdldl.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/home/autolab/planner_env/osqp/lin_sys"/>
+					<Add directory="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl/qdldl_sources/include"/>
+					<Add directory="/usr/include/c++/5"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/5"/>
+					<Add directory="/usr/include/c++/5/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/Makefile&quot;  VERBOSE=1 qdldlstatic/fast"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="qdldl">
+				<Option output="/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/out/libqdldl.so" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources"/>
+				<Option object_output="./"/>
+				<Option type="3"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/home/autolab/planner_env/osqp/lin_sys"/>
+					<Add directory="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl/qdldl_sources/include"/>
+					<Add directory="/usr/include/c++/5"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/5"/>
+					<Add directory="/usr/include/c++/5/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/Makefile&quot;  VERBOSE=1 qdldl"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="qdldl/fast">
+				<Option output="/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/out/libqdldl.so" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources"/>
+				<Option object_output="./"/>
+				<Option type="3"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/home/autolab/planner_env/osqp/lin_sys"/>
+					<Add directory="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl/qdldl_sources/include"/>
+					<Add directory="/usr/include/c++/5"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/5"/>
+					<Add directory="/usr/include/c++/5/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/Makefile&quot;  VERBOSE=1 qdldl/fast"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="qdldl_example">
+				<Option output="/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/out/qdldl_example" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/out"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/home/autolab/planner_env/osqp/lin_sys"/>
+					<Add directory="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl/qdldl_sources/include"/>
+					<Add directory="/usr/include/c++/5"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/5"/>
+					<Add directory="/usr/include/c++/5/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/Makefile&quot;  VERBOSE=1 qdldl_example"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="qdldl_example/fast">
+				<Option output="/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/out/qdldl_example" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/out"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/home/autolab/planner_env/osqp/lin_sys"/>
+					<Add directory="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl/qdldl_sources/include"/>
+					<Add directory="/usr/include/c++/5"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/5"/>
+					<Add directory="/usr/include/c++/5/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/Makefile&quot;  VERBOSE=1 qdldl_example/fast"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="qdldlobject">
+				<Option output="/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/CMakeFiles/qdldlobject.dir/qdldlobject.objlib" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/home/autolab/planner_env/osqp/lin_sys"/>
+					<Add directory="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl/qdldl_sources/include"/>
+					<Add directory="/usr/include/c++/5"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/5"/>
+					<Add directory="/usr/include/c++/5/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/Makefile&quot;  VERBOSE=1 qdldlobject"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="qdldlobject/fast">
+				<Option output="/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/CMakeFiles/qdldlobject.dir/qdldlobject.objlib" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/home/autolab/planner_env/osqp/lin_sys"/>
+					<Add directory="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl/qdldl_sources/include"/>
+					<Add directory="/usr/include/c++/5"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/5"/>
+					<Add directory="/usr/include/c++/5/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/Makefile&quot;  VERBOSE=1 qdldlobject/fast"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="uninstall">
+				<Option working_dir="/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/Makefile&quot;  VERBOSE=1 uninstall"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/CMakeFiles/linsys_pardiso.dir/pardiso/pardiso_interface.c.o">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/CMakeFiles/linsys_pardiso.dir/pardiso/pardiso_loader.c.o">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/CMakeFiles/linsys_qdldl.dir/amd/src/SuiteSparse_config.c.o">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/CMakeFiles/linsys_qdldl.dir/amd/src/amd_1.c.o">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/CMakeFiles/linsys_qdldl.dir/amd/src/amd_2.c.o">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/CMakeFiles/linsys_qdldl.dir/amd/src/amd_aat.c.o">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/CMakeFiles/linsys_qdldl.dir/amd/src/amd_control.c.o">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/CMakeFiles/linsys_qdldl.dir/amd/src/amd_defaults.c.o">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/CMakeFiles/linsys_qdldl.dir/amd/src/amd_info.c.o">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/CMakeFiles/linsys_qdldl.dir/amd/src/amd_order.c.o">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/CMakeFiles/linsys_qdldl.dir/amd/src/amd_post_tree.c.o">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/CMakeFiles/linsys_qdldl.dir/amd/src/amd_postorder.c.o">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/CMakeFiles/linsys_qdldl.dir/amd/src/amd_preprocess.c.o">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/CMakeFiles/linsys_qdldl.dir/amd/src/amd_valid.c.o">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/CMakeFiles/linsys_qdldl.dir/qdldl_interface.c.o">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/cmake-build-debug/lin_sys/direct/qdldl/qdldl_sources/CMakeFiles/qdldlobject.dir/src/qdldl.c.o">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/examples/osqp_demo.c">
+			<Option target="osqp_demo"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/include/auxil.h">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/include/constants.h">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/include/cs.h">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/include/ctrlc.h">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/include/error.h">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/include/glob_opts.h">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/include/lin_alg.h">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/include/lin_sys.h">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/include/osqp.h">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/include/osqp_configure.h">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/include/polish.h">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/include/proj.h">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/include/scaling.h">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/include/types.h">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/include/util.h">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/lin_sys/direct/pardiso/pardiso_interface.c">
+			<Option target="linsys_pardiso"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/lin_sys/direct/pardiso/pardiso_interface.h">
+			<Option target="linsys_pardiso"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/lin_sys/direct/pardiso/pardiso_loader.c">
+			<Option target="linsys_pardiso"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/lin_sys/direct/pardiso/pardiso_loader.h">
+			<Option target="linsys_pardiso"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl/amd/include/SuiteSparse_config.h">
+			<Option target="linsys_qdldl"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl/amd/include/amd.h">
+			<Option target="linsys_qdldl"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl/amd/include/amd_internal.h">
+			<Option target="linsys_qdldl"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl/amd/src/SuiteSparse_config.c">
+			<Option target="linsys_qdldl"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl/amd/src/amd_1.c">
+			<Option target="linsys_qdldl"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl/amd/src/amd_2.c">
+			<Option target="linsys_qdldl"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl/amd/src/amd_aat.c">
+			<Option target="linsys_qdldl"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl/amd/src/amd_control.c">
+			<Option target="linsys_qdldl"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl/amd/src/amd_defaults.c">
+			<Option target="linsys_qdldl"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl/amd/src/amd_info.c">
+			<Option target="linsys_qdldl"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl/amd/src/amd_order.c">
+			<Option target="linsys_qdldl"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl/amd/src/amd_post_tree.c">
+			<Option target="linsys_qdldl"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl/amd/src/amd_postorder.c">
+			<Option target="linsys_qdldl"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl/amd/src/amd_preprocess.c">
+			<Option target="linsys_qdldl"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl/amd/src/amd_valid.c">
+			<Option target="linsys_qdldl"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl/qdldl_interface.c">
+			<Option target="linsys_qdldl"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl/qdldl_interface.h">
+			<Option target="linsys_qdldl"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl/qdldl_sources/examples/example.c">
+			<Option target="qdldl_example"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl/qdldl_sources/include/qdldl.h">
+			<Option target="qdldlstatic"/>
+			<Option target="qdldl"/>
+			<Option target="qdldlobject"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl/qdldl_sources/include/qdldl_types.h">
+			<Option target="qdldlstatic"/>
+			<Option target="qdldl"/>
+			<Option target="qdldlobject"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl/qdldl_sources/src/qdldl.c">
+			<Option target="qdldlstatic"/>
+			<Option target="qdldl"/>
+			<Option target="qdldlobject"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/lin_sys/lib_handler.c">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/lin_sys/lib_handler.h">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/src/auxil.c">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/src/cs.c">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/src/ctrlc.c">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/src/error.c">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/src/kkt.c">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/src/lin_alg.c">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/src/lin_sys.c">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/src/osqp.c">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/src/polish.c">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/src/proj.c">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/src/scaling.c">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/src/util.c">
+			<Option target="osqp"/>
+			<Option target="osqpstatic"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/configure/osqp_configure.h.in">
+			<Option virtualFolder="CMake Files\configure\"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/configure/cmake/FindPythonModule.cmake">
+			<Option virtualFolder="CMake Files\configure\cmake\"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/configure/cmake/Utils.cmake">
+			<Option virtualFolder="CMake Files\configure\cmake\"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/src/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\src\"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/include/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\include\"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/lin_sys/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\lin_sys\"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/lin_sys/direct/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\lin_sys\direct\"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\lin_sys\direct\qdldl\"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl/qdldl_sources/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\lin_sys\direct\qdldl\qdldl_sources\"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl/qdldl_sources/configure/qdldl_types.h.in">
+			<Option virtualFolder="CMake Files\lin_sys\direct\qdldl\qdldl_sources\configure\"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/lin_sys/direct/qdldl/qdldl_sources/configure/cmake/cmake_uninstall.cmake.in">
+			<Option virtualFolder="CMake Files\lin_sys\direct\qdldl\qdldl_sources\configure\cmake\"/>
+		</Unit>
+		<Unit filename="/home/autolab/planner_env/osqp/lin_sys/direct/pardiso/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\lin_sys\direct\pardiso\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>

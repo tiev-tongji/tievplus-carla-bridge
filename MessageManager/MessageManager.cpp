@@ -271,13 +271,23 @@ void MessageManager::pack_navinfo(const csd::GnssMeasurement &gnssMsg)
 	NAVINFO.latitude = gnssMsg.GetLatitude();
 	NAVINFO.longitude = gnssMsg.GetLongitude();
 	NAVINFO.altitude = gnssMsg.GetAltitude();
-	coord.Reset(NAVINFO.latitude, NAVINFO.longitude);
-	NAVINFO.utm_x = coord.Easting();
-	NAVINFO.utm_y = coord.Northing();
+	TiEV::LAT lat;
+	TiEV::LON lon;
+	lat.setByDegree(NAVINFO.latitude);
+	lon.setByDegree(NAVINFO.longitude);
+	TiEV::WGS84Coor gps(lat,lon);
+	auto utm = TiEV::latLonToUTMXY(gps);
+	NAVINFO.utm_x = utm.x;
+	NAVINFO.utm_y = utm.y;
+	// coord.Reset(NAVINFO.latitude, NAVINFO.longitude);
+	// NAVINFO.utm_x = coord.Easting();
+	// NAVINFO.utm_y = coord.Northing();
 
-	//printf("UE4 position: (%f, %f, %f, %f, %f, %f)\n", loc.x, loc.y, loc.z, rot.roll, rot.pitch, rot.yaw);
-	//printf("GPS: (%f, %f)\n", NAVINFO.latitude, NAVINFO.longitude);
-	//printf("error: (%f, %f)\n", NAVINFO.utm_x - loc.x, NAVINFO.utm_y + loc.y);
+
+	printf("UE4 position: (%f, %f, %f, %f, %f, %f)\n", loc.x, loc.y, loc.z, rot.roll, rot.pitch, rot.yaw);
+	printf("GPS: (%f, %f)\n", NAVINFO.latitude, NAVINFO.longitude);
+	printf("UTM: (%f,%f)\n", NAVINFO.utm_x,NAVINFO.utm_y);
+	printf("error: (%f, %f)\n", NAVINFO.utm_x - loc.x, NAVINFO.utm_y + loc.y);
 
 	// rotation
 	/*

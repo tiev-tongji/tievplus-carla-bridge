@@ -1,0 +1,18 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../lin_sys/direct/qdldl/qdldl_sources/include/qdldl.h
+qdldl_types.h
+../lin_sys/direct/qdldl/qdldl_sources/include/qdldl_types.h
+
+../lin_sys/direct/qdldl/qdldl_sources/include/qdldl_types.h
+
+/home/autolab/tiev2019/tiev2019/src/common/osqp/lin_sys/direct/qdldl/qdldl_sources/src/qdldl.c
+qdldl.h
+/home/autolab/tiev2019/tiev2019/src/common/osqp/lin_sys/direct/qdldl/qdldl_sources/src/qdldl.h
+
