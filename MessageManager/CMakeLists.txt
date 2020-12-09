@@ -15,8 +15,12 @@ include_directories (${CMAKE_SOURCE_DIR}/../PythonAPI/carla/dependencies/include
 link_directories (${CMAKE_SOURCE_DIR}/../PythonAPI/carla/dependencies/lib)
 # compile library
 add_library (msg_manager "MessageManager.cpp")
+add_library (msg_manager_utm "MessageManagerUtm.cpp")
 
 # link
 target_link_libraries(msg_manager zcm Geographic carla_client
+                      Detour DetourCrowd boost_filesystem
+                      Recast rpc png jpeg tiff)
+target_link_libraries(msg_manager_utm zcm Geographic carla_client
                       Detour DetourCrowd boost_filesystem
                       Recast rpc png jpeg tiff)

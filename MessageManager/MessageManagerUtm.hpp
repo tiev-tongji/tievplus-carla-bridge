@@ -86,14 +86,10 @@ const static double TIMESTEP_OBJECTLIST_PREDICT = 0.5;	// unit: second
 const static double MAX_STEERINGWHEEL = 500;
 // FUSIONMAP parameters
 const static float FUSIONMAP_RESOLUTION = 0.2;
-const static int16_t MAP_ROW_NUM = 1001;
-const static int16_t MAP_COLUMN_NUM = 501;
+const static int16_t MAP_ROW_NUM = 501;
+const static int16_t MAP_COLUMN_NUM = 251;
 const static int16_t MAP_CENTER_ROW = 351;
 const static int16_t MAP_CENTER_COLUMN = 126;
-// const static int16_t MAP_ROW_NUM = 501;
-// const static int16_t MAP_COLUMN_NUM = 251;
-// const static int16_t MAP_CENTER_ROW = 351;
-// const static int16_t MAP_CENTER_COLUMN = 126;
 const static vector<uint8_t> MAP_ROW_0(MAP_COLUMN_NUM);
 const static double LIDAR_ROTATE_FREQUENCY = 20;
 // ROADMARKINGLIST parameters

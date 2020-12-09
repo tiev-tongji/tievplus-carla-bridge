@@ -25,11 +25,13 @@ add_subdirectory ("${CMAKE_SOURCE_DIR}/common")
 
 # compile
 add_executable (tiev-sim "tiev-sim.cpp")
+add_executable(tiev-sim-once "tiev-sim-once-plan.cpp")
 add_executable (cpp-client-demo "demo.cpp")
 add_executable (syncmode-demo "syncmode_demo.cpp")
 
 # link
 #target_link_libraries (tiev-sim pid_controller msg_manager sfml-graphics sfml-window sfml-system)
 target_link_libraries (tiev-sim pid_controller msg_manager coordinate_converter nature)
+target_link_libraries (tiev-sim-once pid_controller msg_manager_utm coordinate_converter nature)
 target_link_libraries (syncmode-demo msg_manager)
 target_link_libraries (cpp-client-demo carla_client Detour DetourCrowd boost_filesystem Recast rpc png jpeg tiff)

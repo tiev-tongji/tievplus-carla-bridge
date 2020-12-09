@@ -8,16 +8,16 @@
 //#define SYNC_MODE
 //#define OPT_TIME_TEST
 
-#define HIL_MODE
-//#define AUTOPILOT_MODE
+//#define HIL_MODE
+#define AUTOPILOT_MODE
 
 static const string HOST = "127.0.0.1"; // sercer host.
 static const uint16_t PORT = 2000;      // server post.
 //static const size_t WORKER_THREADS = 0ULL;
 static const size_t WORKER_THREADS = 2;
-static const string ZCM_URL = "udpm://239.255.76.67:7668?ttl=1";
+static const string ZCM_URL = "udpm://239.255.76.67:7667?ttl=1";
 static const string PID_PARAMETER_FILEPATH = "../cfg/pid_parameters.json";
-static const string TOWN_NAME = "Town06";
+static const string TOWN_NAME = "Town05";
 static const double SIM_FREQ = 50;
 static std::mt19937_64 rng((std::random_device())());
 static volatile bool keyboardIrruption = false;
@@ -488,35 +488,35 @@ void gameLoop(int16_t freq)
     //cg::Transform egoT = makeTransform(25.527479, 146.448837, 3.5, 0, 0.5, 0); // TOWN06 straight road with 5 lanes
     //double spawnX = 426782.07 - 426858.836012; // UTM to UE4 coord, to find specific spawn point
     //double spawnY = 5427935.4931 - 5427818.3;
-    double spawnX = 426838.6 - 426858.836012; // ./config.py --map TOWN06
-    double spawnY = 5427935.4931 - 5427957.1;
-    cg::Transform egoT = makeTransform(spawnX, spawnY, 3, 0, 180, 0); // TOWN03 0817
+    double spawnX = 426803.0318 - 426858.836012; // ./config.py --map TOWN05
+    double spawnY = 5427935.4931 - 5427917.027;
+    cg::Transform egoT = makeTransform(spawnX, spawnY, 3, 0, 90, 0); // TOWN03 0817
     world.spawnPlayer(egoT, "vehicle.tesla.model3");
     cg::Transform sensorOffset = makeTransform(2.7, 0, 3.5, 0, 0, 0);
     world.spawnGnss(sensorOffset);
     // auto lidar = world.spawnLidar(sensorOffset);
 
-    // cg::Transform target1T = makeTransformRelative(egoT, 30, 2, 0);
+    // cg::Transform target1T = makeTransformRelative(egoT, 50, 2, 0);
     // auto npc1 = world.spawnNpc(target1T, "vehicle.audi.tt");
-    // cg::Transform target2T = makeTransformRelative(egoT, 40, 5.5, 0);
-    // auto npc2 = world.spawnNpc(target2T, "vehicle.audi.tt");
-    // cg::Transform target3T = makeTransformRelative(egoT, 30, -1.5, 0);
-    // auto npc3 = world.spawnNpc(target3T, "random");
+    // cg::Transform target2T = makeTransformRelative(egoT, 50, 5.5, 0);
+    // //auto npc2 = world.spawnNpc(target2T, "random");
+    // cg::Transform target3T = makeTransformRelative(egoT, 50, -1.5, 0);
+    // auto npc3 = world.spawnNpc(target3T);
 
     world.init();
 
-    PIDController npc1_pid(PID_PARAMETER_FILEPATH);
+    // PIDController npc1_pid(PID_PARAMETER_FILEPATH);
     // PIDController npc2_pid(PID_PARAMETER_FILEPATH);
-    PIDController npc3_pid(PID_PARAMETER_FILEPATH);
+    // PIDController npc3_pid(PID_PARAMETER_FILEPATH);
 
     // game loop
     while (!keyboardIrruption)
     {
         auto time_point = std::chrono::steady_clock::now() + std::chrono::milliseconds(1000 / freq);
         world.tick();
-        //ControlNpc(npc1, 0, npc1_pid);
-        // ControlNpc(npc2, 20, npc1_pid);
-        //ControlNpc(npc3, 0, npc3_pid);
+        //ControlNpc(npc1, 50, npc1_pid);
+        //ControlNpc(npc2, 20, npc1_pid);
+        //ControlNpc(npc3, 50, npc3_pid);
         std::this_thread::sleep_until(time_point);
     }
 }

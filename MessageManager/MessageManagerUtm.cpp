@@ -1,4 +1,4 @@
-#include "MessageManager.hpp"
+#include "MessageManagerUtm.hpp"
 
 #ifdef USE_ZCM
 void MessageManager::control_handler(const zcm::ReceiveBuffer *rbuf, const std::string &chan,
@@ -268,9 +268,19 @@ void MessageManager::pack_navinfo(const csd::GnssMeasurement &gnssMsg)
 	// NAVINFO.longitude = coord.Longitude();
 	// NAVINFO.altitude = gnssMsg.GetAltitude();
 
-	NAVINFO.latitude = gnssMsg.GetLatitude();
-	NAVINFO.longitude = gnssMsg.GetLongitude();
-	NAVINFO.altitude = gnssMsg.GetAltitude();
+	GeographicLib::GeoCoords coord("121:12:44E 31:16:54N"); // geographic reference point relocated to tongji
+	NAVINFO.utm_x = coord.Easting() + loc.x;
+	NAVINFO.utm_y = coord.Northing() - loc.y;	
+	TiEV::UTMCoor utm(NAVINFO.utm_x,NAVINFO.utm_y);
+	auto gps = TiEV::UTMXYToLatLon(utm);
+	NAVINFO.latitude = gps.lat.getDegree();
+	NAVINFO.longitude = gps.lon.getDegree();
+	NAVINFO.altitude = loc.z;
+
+
+	// NAVINFO.latitude = gnssMsg.GetLatitude();
+	// NAVINFO.longitude = gnssMsg.GetLongitude();
+	// NAVINFO.altitude = gnssMsg.GetAltitude();
 	// TiEV::LAT lat;
 	// TiEV::LON lon;
 	// lat.setByDegree(NAVINFO.latitude);
@@ -279,9 +289,9 @@ void MessageManager::pack_navinfo(const csd::GnssMeasurement &gnssMsg)
 	// auto utm = TiEV::latLonToUTMXY(gps);
 	// NAVINFO.utm_x = utm.x;
 	// NAVINFO.utm_y = utm.y;
-	coord.Reset(NAVINFO.latitude, NAVINFO.longitude);
-	NAVINFO.utm_x = coord.Easting();
-	NAVINFO.utm_y = coord.Northing();
+	// coord.Reset(NAVINFO.latitude, NAVINFO.longitude);
+	// NAVINFO.utm_x = coord.Easting();
+	// NAVINFO.utm_y = coord.Northing();
 
 
 	printf("UE4 position: (%f, %f, %f, %f, %f, %f)\n", loc.x, loc.y, loc.z, rot.roll, rot.pitch, rot.yaw);
@@ -306,6 +316,8 @@ void MessageManager::pack_navinfo(const csd::GnssMeasurement &gnssMsg)
 	NAVINFO.angle_roll = rot.roll;
 	auto rot_vel = vehState->GetAngularVelocity();
 	NAVINFO.angular_vel_z = deg2rad(-rot_vel.z);
+
+	printf("heading: %f\n",NAVINFO.angle_head);
 
 	// speed, velocity, acceleration
 	// TODO:rear axle to front axle
