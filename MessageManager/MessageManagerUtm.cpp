@@ -62,32 +62,32 @@ void MessageManager::clear()
 
 void MessageManager::publish_caninfo()
 {
-	TUNNEL.publish("CANINFO", &CANINFO);
+	TUNNEL.publish("MsgCanInfoSignal", &CANINFO);
 }
 
 void MessageManager::publish_navinfo()
 {
-	TUNNEL.publish("NAVINFO", &NAVINFO);
+	TUNNEL.publish("MsgNavInfoSignal", &NAVINFO);
 }
 
 void MessageManager::publish_fusionmap()
 {
-	TUNNEL.publish("FUSIONMAP", &FUSIONMAP);
+	TUNNEL.publish("MsgFusionmapSignal", &FUSIONMAP);
 }
 
 void MessageManager::publish_objectlist()
 {
-	TUNNEL.publish("PREDICTEDOBJECT", &OBJECTLIST);
+	TUNNEL.publish("MsgPredictedObjectTrajectoryList", &OBJECTLIST);
 }
 
 void MessageManager::publish_roadmarking()
 {
-	TUNNEL.publish("ROADMARKING", &ROADMARKING);
+	TUNNEL.publish("MsgRoadMarkingList", &ROADMARKING);
 }
 
 void MessageManager::publish_trafficlight()
 {
-	TUNNEL.publish("TRAFFICLIGHTSIGNAL", &TRAFFICLIGHT);
+	TUNNEL.publish("MsgTrafficLightSignal", &TRAFFICLIGHT);
 }
 
 void MessageManager::publish_all()
@@ -106,8 +106,9 @@ void MessageManager::pub_caninfo_loop(int freq)
 	{
 		auto time_point = std::chrono::steady_clock::now() + std::chrono::milliseconds(1000 / freq);
 		_mutex.lock();
-		TUNNEL.publish("CANINFO", &CANINFO);
-		//printf("async mode: publish CANINFO\n");
+		publish_caninfo();
+		// TUNNEL.publish("CANINFO", &CANINFO);
+		// printf("async mode: publish CANINFO\n");
 		_mutex.unlock();
 		std::this_thread::sleep_until(time_point);
 	}
@@ -119,7 +120,8 @@ void MessageManager::pub_navinfo_loop(int freq)
 	{
 		auto time_point = std::chrono::steady_clock::now() + std::chrono::milliseconds(1000 / freq);
 		_mutex.lock();
-		TUNNEL.publish("NAVINFO", &NAVINFO);
+		publish_navinfo();
+		// TUNNEL.publish("NAVINFO", &NAVINFO);
 		//printf("async mode: publish NAVINFO\n");
 		_mutex.unlock();
 		std::this_thread::sleep_until(time_point);
@@ -132,7 +134,8 @@ void MessageManager::pub_fusionmap_loop(int freq)
 	{
 		auto time_point = std::chrono::steady_clock::now() + std::chrono::milliseconds(1000 / freq);
 		_mutex.lock();
-		TUNNEL.publish("FUSIONMAP", &FUSIONMAP);
+		publish_fusionmap();
+		// TUNNEL.publish("FUSIONMAP", &FUSIONMAP);
 		//print("async mode: publish FUSIONMAP");
 		_mutex.unlock();
 		std::this_thread::sleep_until(time_point);
@@ -145,8 +148,9 @@ void MessageManager::pub_objectlist_loop(int freq)
 	{
 		auto time_point = std::chrono::steady_clock::now() + std::chrono::milliseconds(1000 / freq);
 		_mutex.lock();
-		TUNNEL.publish("PREDICTEDOBJECT", &OBJECTLIST);
-		//print("async mode: publish OBJECTLIST");
+		publish_objectlist();
+		// TUNNEL.publish("PREDICTEDOBJECT", &OBJECTLIST);
+		// print("async mode: publish OBJECTLIST");
 		_mutex.unlock();
 		std::this_thread::sleep_until(time_point);
 	}
@@ -158,8 +162,9 @@ void MessageManager::pub_roadmarking_loop(int freq)
 	{
 		auto time_point = std::chrono::steady_clock::now() + std::chrono::milliseconds(1000 / freq);
 		_mutex.lock();
-		TUNNEL.publish("ROADMARKING", &ROADMARKING);
-		//print("async mode: publish ROADMARKINGLIST");
+		publish_roadmarking();
+		// TUNNEL.publish("ROADMARKING", &ROADMARKING);
+		// print("async mode: publish ROADMARKINGLIST");
 		_mutex.unlock();
 		std::this_thread::sleep_until(time_point);
 	}
@@ -171,8 +176,9 @@ void MessageManager::pub_trafficlight_loop(int freq)
 	{
 		auto time_point = std::chrono::steady_clock::now() + std::chrono::milliseconds(1000 / freq);
 		_mutex.lock();
-		TUNNEL.publish("TRAFFICLIGHTSIGNAL", &TRAFFICLIGHT);
-		//print("async mode: publish TRAFFICLIGHTSIGNAL");
+		publish_trafficlight();
+		// TUNNEL.publish("TRAFFICLIGHTSIGNAL", &TRAFFICLIGHT);
+		// print("async mode: publish TRAFFICLIGHTSIGNAL");
 		_mutex.unlock();
 		std::this_thread::sleep_until(time_point);
 	}
@@ -270,13 +276,12 @@ void MessageManager::pack_navinfo(const csd::GnssMeasurement &gnssMsg)
 
 	GeographicLib::GeoCoords coord("121:12:44E 31:16:54N"); // geographic reference point relocated to tongji
 	NAVINFO.utm_x = coord.Easting() + loc.x;
-	NAVINFO.utm_y = coord.Northing() - loc.y;	
-	TiEV::UTMCoor utm(NAVINFO.utm_x,NAVINFO.utm_y);
+	NAVINFO.utm_y = coord.Northing() - loc.y;
+	TiEV::UTMCoor utm(NAVINFO.utm_x, NAVINFO.utm_y);
 	auto gps = TiEV::UTMXYToLatLon(utm);
 	NAVINFO.latitude = gps.lat.getDegree();
 	NAVINFO.longitude = gps.lon.getDegree();
 	NAVINFO.altitude = loc.z;
-
 
 	// NAVINFO.latitude = gnssMsg.GetLatitude();
 	// NAVINFO.longitude = gnssMsg.GetLongitude();
@@ -293,10 +298,9 @@ void MessageManager::pack_navinfo(const csd::GnssMeasurement &gnssMsg)
 	// NAVINFO.utm_x = coord.Easting();
 	// NAVINFO.utm_y = coord.Northing();
 
-
 	printf("UE4 position: (%f, %f, %f, %f, %f, %f)\n", loc.x, loc.y, loc.z, rot.roll, rot.pitch, rot.yaw);
 	printf("GPS: (%f, %f)\n", NAVINFO.latitude, NAVINFO.longitude);
-	printf("UTM: (%f,%f)\n", NAVINFO.utm_x,NAVINFO.utm_y);
+	printf("UTM: (%f,%f)\n", NAVINFO.utm_x, NAVINFO.utm_y);
 	printf("error: (%f, %f)\n", NAVINFO.utm_x - loc.x, NAVINFO.utm_y + loc.y);
 
 	// rotation
@@ -317,7 +321,7 @@ void MessageManager::pack_navinfo(const csd::GnssMeasurement &gnssMsg)
 	auto rot_vel = vehState->GetAngularVelocity();
 	NAVINFO.angular_vel_z = deg2rad(-rot_vel.z);
 
-	printf("heading: %f\n",NAVINFO.angle_head);
+	printf("heading: %f\n", NAVINFO.angle_head);
 
 	// speed, velocity, acceleration
 	// TODO:rear axle to front axle
@@ -791,26 +795,29 @@ void MessageManager::pack_roadmarking(const SharedPtr<cc::Waypoint> current, cc:
 			markingL = wp->GetRightLaneMarking();
 		if (markingL->type == LaneLineType::Solid)
 		{
-			lineL.line_type = lineL.kTypeDividing;
+			lineL.line_type = lineL.kTypeSolid;
 		}
 		else if (markingL->type == LaneLineType::SolidSolid)
 		{
-			lineL.line_type = lineL.kTypeTypeNoPass;
+			lineL.line_type = lineL.kTypeSolid;
 		}
-		else if (markingL->type == LaneLineType::SolidBroken ||
-				 markingL->type == LaneLineType::BrokenSolid)
+		else if (markingL->type == LaneLineType::SolidBroken)
 		{
-			lineL.line_type = lineL.kTypeOneWayPass;
+			lineL.line_type = lineL.kTypeSolid;
+		}
+		else if (markingL->type == LaneLineType::BrokenSolid)
+		{
+			lineL.line_type = lineL.kTypeDashed;
 		}
 		else if (markingL->type == LaneLineType::Broken ||
 				 markingL->type == LaneLineType::BrokenBroken)
 		{
-			lineL.line_type = lineL.kTypeGuiding;
+			lineL.line_type = lineL.kTypeDashed;
 		}
 		else
 		{
 			// BottsDots, Grass, Curb, Other, None
-			lineL.line_type = lineL.kTypeTypeNoPass;
+			lineL.line_type = lineL.kTypeSolidYellow;
 		}
 
 		LaneLine lineR;
@@ -820,26 +827,29 @@ void MessageManager::pack_roadmarking(const SharedPtr<cc::Waypoint> current, cc:
 			markingR = wp->GetLeftLaneMarking();
 		if (markingR->type == LaneLineType::Solid)
 		{
-			lineR.line_type = lineR.kTypeDividing;
+			lineR.line_type = lineR.kTypeSolid;
 		}
 		else if (markingR->type == LaneLineType::SolidSolid)
 		{
-			lineR.line_type = lineR.kTypeTypeNoPass;
+			lineR.line_type = lineR.kTypeSolid;
 		}
-		else if (markingR->type == LaneLineType::SolidBroken ||
-				 markingR->type == LaneLineType::BrokenSolid)
+		else if (markingR->type == LaneLineType::SolidBroken)
 		{
-			lineR.line_type = lineR.kTypeOneWayPass;
+			lineR.line_type = lineR.kTypeSolid;
+		}
+		else if (markingR->type == LaneLineType::BrokenSolid)
+		{
+			lineR.line_type = lineR.kTypeDashed;
 		}
 		else if (markingR->type == LaneLineType::Broken ||
 				 markingR->type == LaneLineType::BrokenBroken)
 		{
-			lineR.line_type = lineR.kTypeGuiding;
+			lineR.line_type = lineR.kTypeDashed;
 		}
 		else
 		{
 			// BottsDots, Grass, Curb, Other, None
-			lineR.line_type = lineR.kTypeTypeNoPass;
+			lineR.line_type = lineR.kTypeSolidYellow;
 		}
 
 		vector<SharedPtr<cc::Waypoint>> waypoints;
@@ -880,16 +890,13 @@ void MessageManager::pack_roadmarking(const SharedPtr<cc::Waypoint> current, cc:
 						cc::DebugHelper::Color colorR;
 						switch (lineL.line_type)
 						{
-						case LaneLine::kTypeDividing:
+						case LaneLine::kTypeSolid:
 							colorL = red;
 							break;
-						case LaneLine::kTypeTypeNoPass:
+						case LaneLine::kTypeSolidYellow:
 							colorL = red;
 							break;
-						case LaneLine::kTypeGuiding:
-							colorL = green;
-							break;
-						case LaneLine::kTypeOneWayPass:
+						case LaneLine::kTypeDashed:
 							colorL = green;
 							break;
 						default:
@@ -897,16 +904,13 @@ void MessageManager::pack_roadmarking(const SharedPtr<cc::Waypoint> current, cc:
 						}
 						switch (lineR.line_type)
 						{
-						case LaneLine::kTypeDividing:
+						case LaneLine::kTypeSolid:
 							colorR = red;
 							break;
-						case LaneLine::kTypeTypeNoPass:
+						case LaneLine::kTypeSolidYellow:
 							colorR = red;
 							break;
-						case LaneLine::kTypeGuiding:
-							colorR = green;
-							break;
-						case LaneLine::kTypeOneWayPass:
+						case LaneLine::kTypeDashed:
 							colorR = green;
 							break;
 						default:
@@ -946,33 +950,12 @@ void MessageManager::pack_roadmarking(const SharedPtr<cc::Waypoint> current, cc:
 	ROADMARKING.stop_line.stop_points.push_back(LinePoint{});
 	ROADMARKING.stop_line.distance = -1;
 
-	ROADMARKING.zebra.exist = 0;
-	ROADMARKING.zebra.num = 1;
-	ROADMARKING.zebra.zebra_points.push_back(LinePoint{});
-	ROADMARKING.zebra.distance = -1;
-
-	ROADMARKING.curb.exist = 0;
-	ROADMARKING.curb.num = 1;
-	ROADMARKING.curb.curb_points.push_back(LinePoint{});
-	ROADMARKING.curb.distance = -1;
-
-	ROADMARKING.no_parking.exist = 0;
-	ROADMARKING.no_parking.num = 1;
-	ROADMARKING.no_parking.no_parking_points.push_back(LinePoint{});
-	ROADMARKING.no_parking.distance = -1;
-
-	ROADMARKING.chevron.exist = 0;
-	ROADMARKING.chevron.num = 1;
-	ROADMARKING.chevron.chevron_points.push_back(LinePoint{});
-	ROADMARKING.chevron.distance = -1;
-
 	auto t2 = std::chrono::steady_clock::now();
 	double dr_ms_pack_roadmarking = std::chrono::duration<double, std::milli>(t2 - t1).count();
 	//std::cout << "time to pack roadmarkinglist: " << dr_ms_pack_roadmarking << std::endl;
 
 	_mutex.unlock();
 }
-
 void MessageManager::pack_trafficlight()
 {
 	;

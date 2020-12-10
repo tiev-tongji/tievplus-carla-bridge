@@ -12,10 +12,6 @@
 #include <vector>
 #include "Lane.hpp"
 #include "StopLine.hpp"
-#include "Zebra.hpp"
-#include "Curb.hpp"
-#include "NoParking.hpp"
-#include "Chevron.hpp"
 
 
 class MsgRoadMarkingList
@@ -29,13 +25,7 @@ class MsgRoadMarkingList
 
         StopLine   stop_line;
 
-        Zebra      zebra;
-
-        Curb       curb;
-
-        NoParking  no_parking;
-
-        Chevron    chevron;
+        int8_t     boundary_detected;
 
     public:
         /**
@@ -155,16 +145,7 @@ int MsgRoadMarkingList::_encodeNoHash(void* buf, uint32_t offset, uint32_t maxle
     thislen = this->stop_line._encodeNoHash(buf, offset + pos, maxlen - pos);
     if(thislen < 0) return thislen; else pos += thislen;
 
-    thislen = this->zebra._encodeNoHash(buf, offset + pos, maxlen - pos);
-    if(thislen < 0) return thislen; else pos += thislen;
-
-    thislen = this->curb._encodeNoHash(buf, offset + pos, maxlen - pos);
-    if(thislen < 0) return thislen; else pos += thislen;
-
-    thislen = this->no_parking._encodeNoHash(buf, offset + pos, maxlen - pos);
-    if(thislen < 0) return thislen; else pos += thislen;
-
-    thislen = this->chevron._encodeNoHash(buf, offset + pos, maxlen - pos);
+    thislen = __boolean_encode_array(buf, offset + pos, maxlen - pos, &this->boundary_detected, 1);
     if(thislen < 0) return thislen; else pos += thislen;
 
     return pos;
@@ -190,16 +171,7 @@ int MsgRoadMarkingList::_decodeNoHash(const void* buf, uint32_t offset, uint32_t
     thislen = this->stop_line._decodeNoHash(buf, offset + pos, maxlen - pos);
     if(thislen < 0) return thislen; else pos += thislen;
 
-    thislen = this->zebra._decodeNoHash(buf, offset + pos, maxlen - pos);
-    if(thislen < 0) return thislen; else pos += thislen;
-
-    thislen = this->curb._decodeNoHash(buf, offset + pos, maxlen - pos);
-    if(thislen < 0) return thislen; else pos += thislen;
-
-    thislen = this->no_parking._decodeNoHash(buf, offset + pos, maxlen - pos);
-    if(thislen < 0) return thislen; else pos += thislen;
-
-    thislen = this->chevron._decodeNoHash(buf, offset + pos, maxlen - pos);
+    thislen = __boolean_decode_array(buf, offset + pos, maxlen - pos, &this->boundary_detected, 1);
     if(thislen < 0) return thislen; else pos += thislen;
 
     return pos;
@@ -214,10 +186,7 @@ uint32_t MsgRoadMarkingList::_getEncodedSizeNoHash() const
         enc_size += this->lanes[a0]._getEncodedSizeNoHash();
     }
     enc_size += this->stop_line._getEncodedSizeNoHash();
-    enc_size += this->zebra._getEncodedSizeNoHash();
-    enc_size += this->curb._getEncodedSizeNoHash();
-    enc_size += this->no_parking._getEncodedSizeNoHash();
-    enc_size += this->chevron._getEncodedSizeNoHash();
+    enc_size += __boolean_encoded_array_size(NULL, 1);
     return enc_size;
 }
 
@@ -229,13 +198,9 @@ uint64_t MsgRoadMarkingList::_computeHash(const __zcm_hash_ptr* p)
             return 0;
     const __zcm_hash_ptr cp = { p, (void*)MsgRoadMarkingList::getHash };
 
-    uint64_t hash = (uint64_t)0x8f039b04b6ef324aLL +
+    uint64_t hash = (uint64_t)0x733c4689a2969b5fLL +
          Lane::_computeHash(&cp) +
-         StopLine::_computeHash(&cp) +
-         Zebra::_computeHash(&cp) +
-         Curb::_computeHash(&cp) +
-         NoParking::_computeHash(&cp) +
-         Chevron::_computeHash(&cp);
+         StopLine::_computeHash(&cp);
 
     return (hash<<1) + ((hash>>63)&1);
 }

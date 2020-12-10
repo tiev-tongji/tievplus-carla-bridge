@@ -283,10 +283,9 @@ void MessageManager::pack_navinfo(const csd::GnssMeasurement &gnssMsg)
 	NAVINFO.utm_x = coord.Easting();
 	NAVINFO.utm_y = coord.Northing();
 
-
 	printf("UE4 position: (%f, %f, %f, %f, %f, %f)\n", loc.x, loc.y, loc.z, rot.roll, rot.pitch, rot.yaw);
 	printf("GPS: (%f, %f)\n", NAVINFO.latitude, NAVINFO.longitude);
-	printf("UTM: (%f,%f)\n", NAVINFO.utm_x,NAVINFO.utm_y);
+	printf("UTM: (%f,%f)\n", NAVINFO.utm_x, NAVINFO.utm_y);
 	printf("error: (%f, %f)\n", NAVINFO.utm_x - loc.x, NAVINFO.utm_y + loc.y);
 
 	// rotation
@@ -637,6 +636,8 @@ void visRoadmarking(cc::DebugHelper &debugHelper)
 // FIXME: this method is a lit bit resource-consuming, now tested to run at about 100Hz.
 void MessageManager::pack_roadmarking(const SharedPtr<cc::Waypoint> current, cc::DebugHelper &debugHelper, bool enableDraw)
 {
+	pack_trafficlight();
+
 	_mutex.lock();
 
 	auto t1 = std::chrono::steady_clock::now();
@@ -779,26 +780,29 @@ void MessageManager::pack_roadmarking(const SharedPtr<cc::Waypoint> current, cc:
 			markingL = wp->GetRightLaneMarking();
 		if (markingL->type == LaneLineType::Solid)
 		{
-			lineL.line_type = lineL.kTypeDividing;
+			lineL.line_type = lineL.kTypeSolid;
 		}
 		else if (markingL->type == LaneLineType::SolidSolid)
 		{
-			lineL.line_type = lineL.kTypeTypeNoPass;
+			lineL.line_type = lineL.kTypeSolid;
 		}
-		else if (markingL->type == LaneLineType::SolidBroken ||
-				 markingL->type == LaneLineType::BrokenSolid)
+		else if (markingL->type == LaneLineType::SolidBroken)
 		{
-			lineL.line_type = lineL.kTypeOneWayPass;
+			lineL.line_type = lineL.kTypeSolid;
+		}
+		else if (markingL->type == LaneLineType::BrokenSolid)
+		{
+			lineL.line_type = lineL.kTypeDashed;
 		}
 		else if (markingL->type == LaneLineType::Broken ||
 				 markingL->type == LaneLineType::BrokenBroken)
 		{
-			lineL.line_type = lineL.kTypeGuiding;
+			lineL.line_type = lineL.kTypeDashed;
 		}
 		else
 		{
 			// BottsDots, Grass, Curb, Other, None
-			lineL.line_type = lineL.kTypeTypeNoPass;
+			lineL.line_type = lineL.kTypeSolidYellow;
 		}
 
 		LaneLine lineR;
@@ -808,26 +812,29 @@ void MessageManager::pack_roadmarking(const SharedPtr<cc::Waypoint> current, cc:
 			markingR = wp->GetLeftLaneMarking();
 		if (markingR->type == LaneLineType::Solid)
 		{
-			lineR.line_type = lineR.kTypeDividing;
+			lineR.line_type = lineR.kTypeSolid;
 		}
 		else if (markingR->type == LaneLineType::SolidSolid)
 		{
-			lineR.line_type = lineR.kTypeTypeNoPass;
+			lineR.line_type = lineR.kTypeSolid;
 		}
-		else if (markingR->type == LaneLineType::SolidBroken ||
-				 markingR->type == LaneLineType::BrokenSolid)
+		else if (markingR->type == LaneLineType::SolidBroken)
 		{
-			lineR.line_type = lineR.kTypeOneWayPass;
+			lineR.line_type = lineR.kTypeSolid;
+		}
+		else if (markingR->type == LaneLineType::BrokenSolid)
+		{
+			lineR.line_type = lineR.kTypeDashed;
 		}
 		else if (markingR->type == LaneLineType::Broken ||
 				 markingR->type == LaneLineType::BrokenBroken)
 		{
-			lineR.line_type = lineR.kTypeGuiding;
+			lineR.line_type = lineR.kTypeDashed;
 		}
 		else
 		{
 			// BottsDots, Grass, Curb, Other, None
-			lineR.line_type = lineR.kTypeTypeNoPass;
+			lineR.line_type = lineR.kTypeSolidYellow;
 		}
 
 		vector<SharedPtr<cc::Waypoint>> waypoints;
@@ -868,16 +875,13 @@ void MessageManager::pack_roadmarking(const SharedPtr<cc::Waypoint> current, cc:
 						cc::DebugHelper::Color colorR;
 						switch (lineL.line_type)
 						{
-						case LaneLine::kTypeDividing:
+						case LaneLine::kTypeSolid:
 							colorL = red;
 							break;
-						case LaneLine::kTypeTypeNoPass:
+						case LaneLine::kTypeSolidYellow:
 							colorL = red;
 							break;
-						case LaneLine::kTypeGuiding:
-							colorL = green;
-							break;
-						case LaneLine::kTypeOneWayPass:
+						case LaneLine::kTypeDashed:
 							colorL = green;
 							break;
 						default:
@@ -885,16 +889,13 @@ void MessageManager::pack_roadmarking(const SharedPtr<cc::Waypoint> current, cc:
 						}
 						switch (lineR.line_type)
 						{
-						case LaneLine::kTypeDividing:
+						case LaneLine::kTypeSolid:
 							colorR = red;
 							break;
-						case LaneLine::kTypeTypeNoPass:
+						case LaneLine::kTypeSolidYellow:
 							colorR = red;
 							break;
-						case LaneLine::kTypeGuiding:
-							colorR = green;
-							break;
-						case LaneLine::kTypeOneWayPass:
+						case LaneLine::kTypeDashed:
 							colorR = green;
 							break;
 						default:
@@ -934,26 +935,6 @@ void MessageManager::pack_roadmarking(const SharedPtr<cc::Waypoint> current, cc:
 	ROADMARKING.stop_line.stop_points.push_back(LinePoint{});
 	ROADMARKING.stop_line.distance = -1;
 
-	ROADMARKING.zebra.exist = 0;
-	ROADMARKING.zebra.num = 1;
-	ROADMARKING.zebra.zebra_points.push_back(LinePoint{});
-	ROADMARKING.zebra.distance = -1;
-
-	ROADMARKING.curb.exist = 0;
-	ROADMARKING.curb.num = 1;
-	ROADMARKING.curb.curb_points.push_back(LinePoint{});
-	ROADMARKING.curb.distance = -1;
-
-	ROADMARKING.no_parking.exist = 0;
-	ROADMARKING.no_parking.num = 1;
-	ROADMARKING.no_parking.no_parking_points.push_back(LinePoint{});
-	ROADMARKING.no_parking.distance = -1;
-
-	ROADMARKING.chevron.exist = 0;
-	ROADMARKING.chevron.num = 1;
-	ROADMARKING.chevron.chevron_points.push_back(LinePoint{});
-	ROADMARKING.chevron.distance = -1;
-
 	auto t2 = std::chrono::steady_clock::now();
 	double dr_ms_pack_roadmarking = std::chrono::duration<double, std::milli>(t2 - t1).count();
 	//std::cout << "time to pack roadmarkinglist: " << dr_ms_pack_roadmarking << std::endl;
@@ -963,5 +944,7 @@ void MessageManager::pack_roadmarking(const SharedPtr<cc::Waypoint> current, cc:
 
 void MessageManager::pack_trafficlight()
 {
-	;
+	TRAFFICLIGHT.left = 1;
+	TRAFFICLIGHT.right = 1;
+	TRAFFICLIGHT.forward = 1;
 }

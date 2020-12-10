@@ -28,29 +28,31 @@ class Lane
         #if __cplusplus > 199711L /* if c++11 */
         static constexpr int8_t   IS_LITTLE_ENDIAN = 0;
         static constexpr int8_t   kTypeNone = 0x00;
-        static constexpr int8_t   kTypeUTurn = 0x01;
-        static constexpr int8_t   kTypeStraight = 0x02;
+        static constexpr int8_t   kTypeStraight = 0x01;
+        static constexpr int8_t   kTypeLeft = 0x02;
         static constexpr int8_t   kTypeStraightLeft = 0x03;
-        static constexpr int8_t   kTypeStraightRight = 0x04;
-        static constexpr int8_t   kTypeLeft = 0x05;
-        static constexpr int8_t   kTypeRight = 0x06;
-        static constexpr int8_t   kTypeLeftRight = 0x07;
-        static constexpr int8_t   kTypeLeftUTurn = 0x08;
-        static constexpr int8_t   kTypeStraightUTurn = 0x09;
-        static constexpr int8_t   kTypeMerge = 0x0A;
+        static constexpr int8_t   kTypeRight = 0x04;
+        static constexpr int8_t   kTypeStraightRight = 0x05;
+        static constexpr int8_t   kTypeStraightLeftRight = 0x07;
+        static constexpr int8_t   kTypeUTurn = 0x08;
+        static constexpr int8_t   kTypeLeftRight = 0x06;
+        static constexpr int8_t   kTypeLeftUTurn = 0x09;
+        static constexpr int8_t   kTypeStraightUTurn = 0x0A;
+        static constexpr int8_t   kTypeMerge = 0x0B;
         #else
         static const     int8_t   IS_LITTLE_ENDIAN = 0;
         static const     int8_t   kTypeNone = 0x00;
-        static const     int8_t   kTypeUTurn = 0x01;
-        static const     int8_t   kTypeStraight = 0x02;
+        static const     int8_t   kTypeStraight = 0x01;
+        static const     int8_t   kTypeLeft = 0x02;
         static const     int8_t   kTypeStraightLeft = 0x03;
-        static const     int8_t   kTypeStraightRight = 0x04;
-        static const     int8_t   kTypeLeft = 0x05;
-        static const     int8_t   kTypeRight = 0x06;
-        static const     int8_t   kTypeLeftRight = 0x07;
-        static const     int8_t   kTypeLeftUTurn = 0x08;
-        static const     int8_t   kTypeStraightUTurn = 0x09;
-        static const     int8_t   kTypeMerge = 0x0A;
+        static const     int8_t   kTypeRight = 0x04;
+        static const     int8_t   kTypeStraightRight = 0x05;
+        static const     int8_t   kTypeStraightLeftRight = 0x07;
+        static const     int8_t   kTypeUTurn = 0x08;
+        static const     int8_t   kTypeLeftRight = 0x06;
+        static const     int8_t   kTypeLeftUTurn = 0x09;
+        static const     int8_t   kTypeStraightUTurn = 0x0A;
+        static const     int8_t   kTypeMerge = 0x0B;
         #endif
 
     public:

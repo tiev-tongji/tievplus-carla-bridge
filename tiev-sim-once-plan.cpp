@@ -8,14 +8,14 @@
 //#define SYNC_MODE
 //#define OPT_TIME_TEST
 
-//#define HIL_MODE
-#define AUTOPILOT_MODE
+#define HIL_MODE
+//#define AUTOPILOT_MODE
 
 static const string HOST = "127.0.0.1"; // sercer host.
 static const uint16_t PORT = 2000;      // server post.
 //static const size_t WORKER_THREADS = 0ULL;
 static const size_t WORKER_THREADS = 2;
-static const string ZCM_URL = "udpm://239.255.76.67:7667?ttl=1";
+static const string ZCM_URL = "udpm://239.255.76.67:7668?ttl=1";
 static const string PID_PARAMETER_FILEPATH = "../cfg/pid_parameters.json";
 static const string TOWN_NAME = "Town05";
 static const double SIM_FREQ = 50;
@@ -71,37 +71,48 @@ public:
           msgManager(ZCM_URL), pidController(PID_PARAMETER_FILEPATH){};
     ~MyWorld()
     {
-        for (auto s : sensorList)
+        // for (auto s : sensorList)
+        // {
+        //     if (s->IsAlive())
+        //     {
+        //         std::cout << "[INFO] Destroying sensor " << s->GetDisplayId() << std::endl;
+        //         s->Stop();
+        //         s->Destroy();
+        //     }
+        // }
+        // for (auto npc : npcList)
+        // {
+        //     if (npc->IsAlive())
+        //     {
+        //         std::cout << "[INFO] Destroying npc    " << npc->GetDisplayId() << std::endl;
+        //         npc->Destroy();
+        //     }
+        // }
+        // for (auto prop : propList)
+        // {
+        //     if (prop->IsAlive())
+        //     {
+        //         std::cout << "[INFO] Destroying prop   " << prop->GetDisplayId() << std::endl;
+        //         prop->Destroy();
+        //     }
+        // }
+        // if (player.get() != nullptr)
+        // {
+        //     if (player->IsAlive())
+        //     {
+        //         std::cout << "[INFO] Destroying player " << player->GetDisplayId() << std::endl;
+        //         player->Destroy();
+        //     }
+        // }
+        for (size_t i = 0; i < 50; ++i)
         {
-            if (s->IsAlive())
+            auto actors = carlaWorld.GetActors();
+            for (auto a : *actors)
             {
-                std::cout << "[INFO] Destroying sensor " << s->GetDisplayId() << std::endl;
-                s->Stop();
-                s->Destroy();
-            }
-        }
-        for (auto npc : npcList)
-        {
-            if (npc->IsAlive())
-            {
-                std::cout << "[INFO] Destroying npc    " << npc->GetDisplayId() << std::endl;
-                npc->Destroy();
-            }
-        }
-        for (auto prop : propList)
-        {
-            if (prop->IsAlive())
-            {
-                std::cout << "[INFO] Destroying prop   " << prop->GetDisplayId() << std::endl;
-                prop->Destroy();
-            }
-        }
-        if (player.get() != nullptr)
-        {
-            if (player->IsAlive())
-            {
-                std::cout << "[INFO] Destroying player " << player->GetDisplayId() << std::endl;
-                player->Destroy();
+                if (a->IsAlive())
+                {
+                    a->Destroy();
+                }
             }
         }
     };
@@ -478,8 +489,8 @@ void gameLoop(int16_t freq)
     std::cout << "[INFO] Server API version : " << client.GetServerVersion() << '\n';
 
     // get world, blueprints and map
-    cc::World carlaWorld = client.LoadWorld(TOWN_NAME);
-    //cc::World carlaWorld = client.GetWorld();
+    // cc::World carlaWorld = client.LoadWorld(TOWN_NAME);
+    cc::World carlaWorld = client.GetWorld();
     cc::TrafficManager tm = client.GetInstanceTM();
     MyWorld world(carlaWorld, tm);
     world.setup();

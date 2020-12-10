@@ -16,7 +16,11 @@ class MsgTrafficLightSignal
     public:
         int64_t    timestamp;
 
-        uint8_t    turn_signal;
+        int8_t     left;
+
+        int8_t     forward;
+
+        int8_t     right;
 
     public:
         /**
@@ -125,7 +129,13 @@ int MsgTrafficLightSignal::_encodeNoHash(void* buf, uint32_t offset, uint32_t ma
     thislen = __int64_t_encode_array(buf, offset + pos, maxlen - pos, &this->timestamp, 1);
     if(thislen < 0) return thislen; else pos += thislen;
 
-    thislen = __byte_encode_array(buf, offset + pos, maxlen - pos, &this->turn_signal, 1);
+    thislen = __boolean_encode_array(buf, offset + pos, maxlen - pos, &this->left, 1);
+    if(thislen < 0) return thislen; else pos += thislen;
+
+    thislen = __boolean_encode_array(buf, offset + pos, maxlen - pos, &this->forward, 1);
+    if(thislen < 0) return thislen; else pos += thislen;
+
+    thislen = __boolean_encode_array(buf, offset + pos, maxlen - pos, &this->right, 1);
     if(thislen < 0) return thislen; else pos += thislen;
 
     return pos;
@@ -139,7 +149,13 @@ int MsgTrafficLightSignal::_decodeNoHash(const void* buf, uint32_t offset, uint3
     thislen = __int64_t_decode_array(buf, offset + pos, maxlen - pos, &this->timestamp, 1);
     if(thislen < 0) return thislen; else pos += thislen;
 
-    thislen = __byte_decode_array(buf, offset + pos, maxlen - pos, &this->turn_signal, 1);
+    thislen = __boolean_decode_array(buf, offset + pos, maxlen - pos, &this->left, 1);
+    if(thislen < 0) return thislen; else pos += thislen;
+
+    thislen = __boolean_decode_array(buf, offset + pos, maxlen - pos, &this->forward, 1);
+    if(thislen < 0) return thislen; else pos += thislen;
+
+    thislen = __boolean_decode_array(buf, offset + pos, maxlen - pos, &this->right, 1);
     if(thislen < 0) return thislen; else pos += thislen;
 
     return pos;
@@ -149,13 +165,15 @@ uint32_t MsgTrafficLightSignal::_getEncodedSizeNoHash() const
 {
     uint32_t enc_size = 0;
     enc_size += __int64_t_encoded_array_size(NULL, 1);
-    enc_size += __byte_encoded_array_size(NULL, 1);
+    enc_size += __boolean_encoded_array_size(NULL, 1);
+    enc_size += __boolean_encoded_array_size(NULL, 1);
+    enc_size += __boolean_encoded_array_size(NULL, 1);
     return enc_size;
 }
 
 uint64_t MsgTrafficLightSignal::_computeHash(const __zcm_hash_ptr*)
 {
-    uint64_t hash = (uint64_t)0xf122a36a2331366dLL;
+    uint64_t hash = (uint64_t)0x5564723f83885d01LL;
     return (hash<<1) + ((hash>>63)&1);
 }
 
